@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Game Berhitung Rafa &amp; Hanan</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #facc15;
+            --bg-color: #ffffff;
+            --text-color: #0f172a;
+            --muted-color: #64748b;
+            --card-bg: #ffffff;
+            --soft-card: #ffffff;
+            --border-color: #dbe4f0;
+            --panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            --button-shadow: 0 10px 22px rgba(37, 99, 235, 0.16);
+            --danger-bg: #fee2e2;
+            --danger-text: #dc2626;
+            --success-color: #16a34a;
+            --input-bg: #ffffff;
+            --surface-alt: #f8fafc;
+            --brand-text: #ffffff;
+            --step-accent-bg: #fef3c7;
+        }
+
+        body[data-theme="dark"] {
+            --primary-color: #60a5fa;
+            --secondary-color: #fde047;
+            --bg-color: #090f1a;
+            --text-color: #e5eefc;
+            --muted-color: #9fb0c8;
+            --card-bg: #0f172a;
+            --soft-card: #0f172a;
+            --border-color: #22304a;
+            --panel-shadow: 0 18px 42px rgba(0, 0, 0, 0.36);
+            --button-shadow: 0 10px 24px rgba(96, 165, 250, 0.18);
+            --danger-bg: rgba(239, 68, 68, 0.18);
+            --danger-text: #fca5a5;
+            --success-color: #86efac;
+            --input-bg: #111c31;
+            --surface-alt: #111c31;
+            --brand-text: #08111f;
+            --step-accent-bg: #2a2410;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: "Nunito", "Baloo 2", "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100dvh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        #app-container {
+            width: min(96vw, 980px);
+            height: min(94dvh, 540px);
+            min-height: 470px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            box-shadow: var(--panel-shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header,
+        .screen,
+        .confetti-layer {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 18px 10px;
+            align-items: center;
+            height: 64px;
+            flex-shrink: 0;
+        }
+
+        .header-left,
+        .header-right {
+            display: flex;
+            gap: 9px;
+            align-items: center;
+        }
+
+        .brand-mini {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            color: var(--text-color);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+
+        .brand-text {
+            font-size: 0.98rem;
+            white-space: nowrap;
+        }
+
+        .btn-home,
+        .btn-fullscreen,
+        .theme-toggle {
+            height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.9rem;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .btn-home {
+            min-width: 112px;
+            gap: 7px;
+            padding: 0 14px;
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: var(--button-shadow);
+        }
+
+        .btn-fullscreen,
+        .theme-toggle {
+            width: 38px;
+            min-width: 38px;
+            padding: 0;
+            background: var(--soft-card);
+            color: var(--text-color);
+        }
+
+        .btn-home:hover,
+        .btn-fullscreen:hover,
+        .theme-toggle:hover,
+        .step-btn:hover,
+        .btn-start:hover,
+        .btn-restart:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-home:active,
+        .btn-fullscreen:active,
+        .theme-toggle:active,
+        .step-btn:active,
+        .btn-start:active,
+        .btn-restart:active,
+        .btn-num:active {
+            transform: scale(0.96);
+        }
+
+        .icon-line {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            flex: 0 0 auto;
+        }
+
+        .theme-toggle > span {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+            line-height: 0;
+        }
+
+        .question-counter,
+        .timer {
+            width: 104px;
+            min-width: 104px;
+            height: 38px;
+            place-items: center;
+            background: var(--soft-card);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            font-size: 1.12rem;
+            font-weight: 1000;
+            padding: 0 12px;
+        }
+
+        .question-counter {
+            display: none;
+            color: var(--text-color);
+        }
+
+        .timer {
+            display: grid;
+            font-family: "Nunito", "Comic Sans MS", ui-monospace, monospace;
+            color: var(--primary-color);
+        }
+
+        .timer.critical {
+            color: var(--danger-text);
+        }
+
+        .screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 22px 20px;
+            animation: fadeIn 0.22s ease;
+            min-height: 0;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        #menu-screen {
+            justify-content: flex-start;
+            align-items: stretch;
+            gap: 12px;
+            padding: 0 24px 18px;
+            overflow: hidden;
+        }
+
+        .menu-hero {
+            display: flex;
+            justify-content: flex-start;
+            align-items: end;
+            gap: 14px;
+            flex-shrink: 0;
+            padding: 2px 4px 0;
+        }
+
+        #menu-screen h1 {
+            margin: 0;
+            font-size: clamp(1.72rem, 3.2vw, 2.36rem);
+            line-height: 1.02;
+            letter-spacing: -0.06em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+            gap: 16px;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .setting-card {
+            border-radius: 26px;
+            border: 1px solid var(--border-color);
+            background: var(--soft-card);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .card-title h2 {
+            margin: 0;
+            font-size: 1rem;
+            letter-spacing: -0.03em;
+        }
+
+        .setting-group,
+        .stepper-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .stepper-stack {
+            display: grid;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        label {
+            font-weight: 1000;
+            color: var(--text-color);
+            font-size: 0.88rem;
+            letter-spacing: -0.01em;
+        }
+
+        .counter-control {
+            display: grid;
+            grid-template-columns: 62px minmax(0, 1fr) 62px;
+            align-items: center;
+            overflow: hidden;
+            min-height: 56px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--input-bg);
+        }
+
+        .step-btn {
+            height: 100%;
+            min-height: 56px;
+            border: 0;
+            border-radius: 0;
+            background: var(--surface-alt);
+            color: var(--text-color);
+            font-size: 1.55rem;
+            font-weight: 1000;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .counter-control .step-btn:first-child {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .counter-control .step-btn:last-child {
+            border-left: 1px solid var(--border-color);
+            background: var(--step-accent-bg);
+        }
+
+        .counter-control input[type="number"] {
+            width: 100%;
+            height: 56px;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: var(--text-color);
+            text-align: center;
+            font-family: inherit;
+            font-size: 1.72rem;
+            font-weight: 1000;
+            letter-spacing: -0.05em;
+            padding: 0 8px;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .operation-slider {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 7px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 21px;
+        }
+
+        .operation-slider input {
+            display: none;
+        }
+
+        .operation-slider label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            min-height: 76px;
+            border-radius: 16px;
+            cursor: pointer;
+            color: var(--muted-color);
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .operation-symbol {
+            font-size: 2rem;
+            line-height: 1;
+            font-weight: 1000;
+            color: inherit;
+        }
+
+        .operation-text {
+            font-size: 0.72rem;
+            font-weight: 1000;
+            letter-spacing: -0.01em;
+        }
+
+        .operation-slider input:checked + label {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--button-shadow);
+            transform: translateY(-1px);
+        }
+
+        .level-wrap {
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            min-height: 58px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 900;
+            padding: 0 48px 0 16px;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .level-wrap::after {
+            content: "⌄";
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-55%);
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            font-weight: 1000;
+            pointer-events: none;
+        }
+
+        .chance-toggle {
+            min-height: 52px;
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            background: var(--input-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 14px 0 16px;
+            cursor: pointer;
+        }
+
+        .chance-toggle input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .chance-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            display: grid;
+            place-items: center;
+            color: white;
+            background: var(--input-bg);
+            transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+            flex: 0 0 auto;
+        }
+
+        .chance-box svg {
+            width: 19px;
+            height: 19px;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            opacity: 0;
+            transform: scale(0.72);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .chance-toggle input:checked + .chance-box {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: scale(1.02);
+        }
+
+        .chance-toggle input:checked + .chance-box svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        .btn-start {
+            width: 100%;
+            min-height: 58px;
+            border: 0;
+            border-radius: 22px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 1000;
+            cursor: pointer;
+            margin-top: auto;
+            box-shadow: var(--button-shadow);
+            letter-spacing: -0.01em;
+            transition: transform 0.18s ease, filter 0.18s ease;
+        }
+
+        .game-layout {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .question-area {
+            --game-font-size: clamp(3rem, 8vw, 5.8rem);
+            --question-row-height: calc(var(--game-font-size) * 1.08);
+            --answer-row-height: calc(var(--game-font-size) * 1.22);
+            flex: 1;
+            display: grid;
+            grid-template-rows: minmax(0, 1fr) var(--question-row-height) var(--answer-row-height) minmax(0, 1fr);
+            row-gap: 12px;
+            justify-items: center;
+            align-items: center;
+            background: var(--soft-card);
+            border-radius: 28px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            padding: 16px;
+        }
+
+        #question-text,
+        .answer-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2em;
+            z-index: 1;
+        }
+
+        #question-text {
+            grid-row: 2;
+            width: 100%;
+            height: var(--question-row-height);
+            font-size: var(--game-font-size);
+            font-weight: 1000;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            overflow: hidden;
+        }
+
+        .answer-display {
+            grid-row: 3;
+            width: 170px;
+            height: var(--answer-row-height);
+            border-bottom: 7px solid var(--secondary-color);
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: var(--game-font-size);
+            font-weight: 1000;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            padding: 0 8px 6px;
+            overflow: hidden;
+        }
+
+        .digit-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.08em;
+        }
+
+        .digit-group.multi-digit {
+            gap: 0.05em;
+        }
+
+        .math-operator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0.7em;
+            margin: 0 0.02em;
+        }
+
+        .question-area.vertical-mode {
+            --vertical-font-size: clamp(2.5rem, 6vw, 4.35rem);
+            --vertical-answer-size: clamp(2.8rem, 6.4vw, 4.7rem);
+            grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+            row-gap: 8px;
+        }
+
+        .question-area.vertical-mode #question-text {
+            width: min(64%, 225px);
+            height: auto;
+            overflow: visible;
+            align-items: stretch;
+            font-size: var(--vertical-font-size);
+        }
+
+        .vertical-question {
+            width: 100%;
+            display: grid;
+            justify-items: stretch;
+            line-height: 0.92;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .vertical-number {
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 0.54em;
+            gap: 0.08em;
+        }
+
+        .vertical-number .digit-group {
+            grid-column: 1;
+            justify-self: center;
+        }
+
+        .vertical-divider {
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 0.54em;
+            align-items: center;
+            gap: 0.08em;
+            margin-top: 0.12em;
+        }
+
+        .vertical-line {
+            width: 100%;
+            height: 7px;
+            border-radius: 999px;
+            background: var(--secondary-color);
+        }
+
+        .vertical-operator {
+            display: grid;
+            place-items: center;
+            font-size: 0.72em;
+            line-height: 1;
+        }
+
+        .question-area.vertical-mode .answer-display {
+            width: min(64%, 225px);
+            height: auto;
+            min-height: calc(var(--vertical-answer-size) * 1.05);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 0.54em;
+            gap: 0.08em;
+            border-bottom: 0;
+            padding: 0;
+            font-size: var(--vertical-answer-size);
+        }
+
+        .question-area.vertical-mode .answer-display .digit-group {
+            grid-column: 1;
+            justify-self: center;
+        }
+
+        .numpad {
+            flex: 0 0 38%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .btn-num {
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: clamp(2.8rem, 4.5vw, 3.25rem);
+            font-weight: 1000;
+            cursor: pointer;
+            transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .num-key:active,
+        .num-key.key-pressed {
+            background: var(--secondary-color) !important;
+            color: #071225 !important;
+            border-color: var(--secondary-color) !important;
+            box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.28);
+        }
+
+        .btn-del,
+        .btn-ok {
+            font-size: clamp(2rem, 3.5vw, 2.45rem);
+        }
+
+        .btn-del {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+        }
+        
+        .btn-ok {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .result-stats {
+            text-align: center;
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+        
+        .score-big {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            line-height: 1;
+            font-weight: 1000;
+            color: var(--primary-color);
+            margin: 8px 0;
+            letter-spacing: 0;
+        }
+
+        #result-screen h2 {
+            margin: 0 0 8px;
+            font-size: 2rem;
+            letter-spacing: -0.04em;
+        }
+
+        .btn-restart {
+            margin-top: 18px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 14px 34px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 1000;
+            box-shadow: var(--button-shadow);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            width: min(100%, 760px);
+            margin-top: 14px;
+        }
+
+        .result-card {
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            border-radius: 22px;
+            padding: 14px 12px;
+            display: grid;
+            gap: 6px;
+            place-items: center;
+            min-height: 90px;
+        }
+
+        .result-label {
+            color: var(--muted-color);
+            font-size: 0.88rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .result-value {
+            color: var(--text-color);
+            font-size: 1.32rem;
+            font-weight: 1000;
+            line-height: 1;
+        }
+
+        #stat-correct {
+            color: var(--success-color);
+        }
+
+        #stat-wrong {
+            color: var(--danger-text);
+        }
+
+        #stat-unanswered {
+            color: var(--secondary-color);
+        }
+
+        #stat-total {
+            color: var(--primary-color);
+        }
+
+        .time-summary {
+            width: min(100%, 760px);
+            margin-top: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            border-radius: 22px;
+            padding: 0 16px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+        }
+
+        .time-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            width: 100%;
+        }
+
+        .time-summary-item {
+            display: grid;
+            place-items: center;
+            gap: 6px;
+            min-width: 0;
+            min-height: 62px;
+            padding: 0 12px;
+        }
+
+        .time-summary-item + .time-summary-item {
+            border-left: 1px solid var(--border-color);
+        }
+
+        .time-summary-label {
+            color: var(--muted-color);
+            font-size: 0.88rem;
+            font-weight: 900;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .time-summary-value {
+            color: var(--text-color);
+            font-size: 1.32rem;
+            font-weight: 1000;
+            line-height: 1;
+        }
+
+        #time-used-value {
+            color: var(--primary-color);
+        }
+
+        #time-remaining-value {
+            color: var(--success-color);
+        }
+
+        .confetti-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            top: -20px;
+            width: 10px;
+            height: 16px;
+            border-radius: 2px;
+            opacity: 0.95;
+            animation-name: confettiFall;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translate3d(0, -20px, 0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate3d(var(--drift), 560px, 0) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-height: 560px), (max-width: 840px) {
+            #app-container {
+                width: 100vw;
+                height: 100dvh;
+                min-height: 0;
+                border-radius: 0;
+            }
+
+            .header {
+                height: 56px;
+                padding: 10px 14px 8px;
+            }
+
+            .brand-text {
+                display: none;
+            }
+
+            .question-counter,
+            .timer {
+                width: 88px;
+                min-width: 88px;
+                font-size: 0.98rem;
+            }
+
+            #menu-screen {
+                padding: 0 14px 12px;
+                gap: 8px;
+            }
+
+            #menu-screen h1 {
+                font-size: 1.55rem;
+            }
+
+            .settings-grid {
+                gap: 10px;
+            }
+
+            .setting-card {
+                border-radius: 20px;
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .card-title h2 {
+                font-size: 0.9rem;
+            }
+
+            .counter-control {
+                min-height: 45px;
+                grid-template-columns: 50px minmax(0, 1fr) 50px;
+                border-radius: 16px;
+            }
+
+            .counter-control input[type="number"] {
+                height: 45px;
+                font-size: 1.35rem;
+            }
+
+            .step-btn {
+                min-height: 45px;
+                font-size: 1.28rem;
+            }
+
+            .operation-slider label {
+                min-height: 58px;
+                border-radius: 13px;
+            }
+
+            .operation-symbol {
+                font-size: 1.55rem;
+            }
+
+            select {
+                min-height: 46px;
+                border-radius: 15px;
+                font-size: 0.82rem;
+            }
+
+            .btn-start {
+                min-height: 48px;
+                border-radius: 17px;
+                font-size: 0.96rem;
+            }
+
+            .result-grid {
+                gap: 8px;
+            }
+
+            .result-card {
+                border-radius: 16px;
+                min-height: 72px;
+                padding: 10px 8px;
+            }
+
+            .result-label {
+                font-size: 0.74rem;
+            }
+
+            .result-value {
+                font-size: 1.12rem;
+            }
+
+            .time-summary {
+                margin-top: 8px;
+                border-radius: 16px;
+                padding: 0 10px;
+                min-height: 72px;
+            }
+
+            .time-summary-item {
+                gap: 4px;
+                min-height: 50px;
+                padding: 0 6px;
+            }
+
+            .time-summary-label {
+                font-size: 0.74rem;
+            }
+
+            .time-summary-value {
+                font-size: 1.12rem;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .settings-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-height: 430px) {
+            .header {
+                height: 46px;
+                padding: 6px 10px;
+            }
+
+            .btn-home,
+            .btn-fullscreen,
+            .theme-toggle,
+            .question-counter,
+            .timer {
+                height: 34px;
+                border-radius: 12px;
+            }
+
+            .btn-home {
+                min-width: 34px;
+                padding: 0;
+            }
+
+            .btn-fullscreen,
+            .theme-toggle {
+                width: 34px;
+                min-width: 34px;
+            }
+
+            .question-counter,
+            .timer {
+                width: 78px;
+                min-width: 78px;
+                font-size: 0.92rem;
+            }
+
+            .screen {
+                padding-bottom: 10px;
+            }
+
+            .setting-card {
+                gap: 6px;
+                padding: 8px;
+            }
+
+            .stepper-stack {
+                gap: 5px;
+            }
+
+            .counter-control,
+            .counter-control input[type="number"],
+            .step-btn {
+                min-height: 38px;
+                height: 38px;
+            }
+
+            .operation-slider label {
+                min-height: 46px;
+            }
+
+            .btn-start {
+                min-height: 40px;
+            }
+
+            .question-area {
+                --game-font-size: 2.5rem;
+                --question-row-height: 2.7rem;
+                --answer-row-height: 3.1rem;
+                row-gap: 8px;
+            }
+
+            .answer-display { width: 150px; }
+            .btn-num { font-size: 2rem; border-radius: 15px; }
+            .btn-del,
+            .btn-ok { font-size: 1.45rem; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+<div id="app-container">
+    <div id="confettiLayer" class="confetti-layer"></div>
+    <div class="header">
+        <div class="header-left">
+            <div class="brand-mini" aria-label="Game Berhitung Rafa dan Hanan">
+                <button class="btn-home" onclick="goHome()" title="Home">
+                    <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-5h5v5"/></svg>
+                    <span>Home</span>
+                </button>
+                <div class="brand-text">Game Berhitung Rafa &amp; Hanan</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Ganti Tema" aria-label="Ganti Tema">
+                <span id="themeIcon"></span>
+            </button>
+            <button class="btn-fullscreen" onclick="toggleFullScreen()" title="Full Screen" aria-label="Full Screen">
+                <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M21 16v5h-5"/><path d="M3 16v5h5"/></svg>
+            </button>
+            <div id="questionCounter" class="question-counter">1/20</div>
+            <div class="timer" id="timerDisplay">00:00</div>
+        </div>
+    </div>
+
+    <div id="menu-screen" class="screen active">
+        <div class="menu-hero">
+            <div>
+                <h1>Pengaturan Game</h1>
+            </div>
+        </div>
+        
+        <div class="settings-grid">
+            <section class="setting-card left-panel" aria-label="Pengaturan jumlah soal dan waktu">
+                <div class="card-title">
+                    <h2>Atur Tantangan</h2>
+                </div>
+
+                <div class="stepper-stack">
+                    <div class="stepper-field">
+                        <label for="questionCount">Jumlah Soal</label>
+                        <div class="counter-control">
+                            <button type="button" class="step-btn" onclick="stepValue('questionCount', -1, 1, 100)" aria-label="Kurangi jumlah soal">−</button>
+                            <input type="number" id="questionCount" min="1" max="100" value="20" inputmode="numeric">
+                            <button type="button" class="step-btn" onclick="stepValue('questionCount', 1, 1, 100)" aria-label="Tambah jumlah soal">+</button>
+                        </div>
+                    </div>
+
+                    <div class="stepper-field">
+                        <label for="timeMin">Batas Waktu (Menit)</label>
+                        <div class="counter-control">
+                            <button type="button" class="step-btn" onclick="stepValue('timeMin', -1, 0, 60)" aria-label="Kurangi menit">−</button>
+                            <input type="number" id="timeMin" min="0" max="60" value="1" inputmode="numeric">
+                            <button type="button" class="step-btn" onclick="stepValue('timeMin', 1, 0, 60)" aria-label="Tambah menit">+</button>
+                        </div>
+                    </div>
+
+                    <div class="stepper-field">
+                        <label for="timeSec">Batas Waktu (Detik)</label>
+                        <div class="counter-control">
+                            <button type="button" class="step-btn" onclick="stepValue('timeSec', -1, 0, 59)" aria-label="Kurangi detik">−</button>
+                            <input type="number" id="timeSec" min="0" max="59" value="0" inputmode="numeric">
+                            <button type="button" class="step-btn" onclick="stepValue('timeSec', 1, 0, 59)" aria-label="Tambah detik">+</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="setting-card right-panel" aria-label="Pengaturan operasi hitung dan level">
+                <div class="card-title">
+                    <h2>Mode Bermain</h2>
+                </div>
+
+                <div class="setting-group">
+                    <label>Pilih Operasi Hitung</label>
+                    <div class="operation-slider">
+                        <input type="radio" id="operationAdd" name="operationMode" value="add" checked>
+                        <label for="operationAdd">
+                            <span class="operation-symbol">+</span>
+                            <span class="operation-text">Tambah</span>
+                        </label>
+
+                        <input type="radio" id="operationSubtract" name="operationMode" value="subtract">
+                        <label for="operationSubtract">
+                            <span class="operation-symbol">−</span>
+                            <span class="operation-text">Kurang</span>
+                        </label>
+
+                        <input type="radio" id="operationMixed" name="operationMode" value="mixed">
+                        <label for="operationMixed">
+                            <span class="operation-symbol">±</span>
+                            <span class="operation-text">Campur</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="levelSelect">Pilih Level</label>
+                    <div class="level-wrap">
+                        <select id="levelSelect">
+                            <option value="1">Level 1 (1-5 + 1-5)</option>
+                            <option value="2">Level 2 (1-5 + 5-10)</option>
+                            <option value="3">Level 3 (1-5 + 10-15)</option>
+                            <option value="4">Level 4 (1-5 + 15-20)</option>
+                            <option value="5">Level 5 (5-10 + 5-10)</option>
+                            <option value="6">Level 6 (5-10 + 10-15)</option>
+                            <option value="7">Level 7 (5-10 + 15-20)</option>
+                            <option value="8">Level 8 (1-10 + 20-90)</option>
+                            <option value="9">Level 9 (Bersusun tanpa menyimpan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="chance-toggle" for="chanceMode">
+                        <span>Kesempatan</span>
+                        <input type="checkbox" id="chanceMode">
+                        <span class="chance-box" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg>
+                        </span>
+                    </label>
+                </div>
+
+                <button class="btn-start" onclick="startGame()">Mulai Main</button>
+            </section>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="game-layout">
+            <div class="question-area">
+                <div id="question-text">? + ?</div>
+                <div id="user-input" class="answer-display"></div>
+            </div>
+
+            <div class="numpad">
+                <button class="btn-num num-key" onclick="inputNum(1)">1</button>
+                <button class="btn-num num-key" onclick="inputNum(2)">2</button>
+                <button class="btn-num num-key" onclick="inputNum(3)">3</button>
+                <button class="btn-num num-key" onclick="inputNum(4)">4</button>
+                <button class="btn-num num-key" onclick="inputNum(5)">5</button>
+                <button class="btn-num num-key" onclick="inputNum(6)">6</button>
+                <button class="btn-num num-key" onclick="inputNum(7)">7</button>
+                <button class="btn-num num-key" onclick="inputNum(8)">8</button>
+                <button class="btn-num num-key" onclick="inputNum(9)">9</button>
+                <button class="btn-num btn-del" onclick="deleteInput()">DEL</button>
+                <button class="btn-num num-key" onclick="inputNum(0)">0</button>
+                <button class="btn-num btn-ok" onclick="submitAnswer()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <h2>Permainan Selesai!</h2>
+        <div class="result-stats">
+            <div>Nilai Akhir</div>
+            <div class="score-big" id="final-score">0</div>
+            <div class="result-grid" aria-label="Rincian skor">
+                <div class="result-card">
+                    <div class="result-label">Benar</div>
+                    <div class="result-value" id="stat-correct">0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Salah</div>
+                    <div class="result-value" id="stat-wrong">0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Tak Terjawab</div>
+                    <div class="result-value" id="stat-unanswered">0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Total Soal</div>
+                    <div class="result-value" id="stat-total">0</div>
+                </div>
+            </div>
+
+            <div class="time-summary" aria-label="Ringkasan waktu">
+                <div class="time-summary-grid">
+                    <div class="time-summary-item">
+                        <div class="time-summary-label">Waktu Dipilih</div>
+                        <div class="time-summary-value" id="time-selected-value">00:00</div>
+                    </div>
+                    <div class="time-summary-item">
+                        <div class="time-summary-label">Waktu Terpakai</div>
+                        <div class="time-summary-value" id="time-used-value">00:00</div>
+                    </div>
+                    <div class="time-summary-item">
+                        <div class="time-summary-label">Sisa Waktu</div>
+                        <div class="time-summary-value" id="time-remaining-value">00:00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn-restart" onclick="goHome()">Main Lagi</button>
+    </div>
+</div>
+
+<script>
+    let currentLevel = 1;
+    let currentOperation = 'add';
+    let totalQuestionsSetting = 10;
+
+    const levelConfigs = {
+        1: { add: [[1, 5], [1, 5]], subtract: [[1, 5], [1, 5]] },
+        2: { add: [[1, 5], [5, 10]], subtract: [[5, 10], [1, 5]] },
+        3: { add: [[1, 5], [10, 15]], subtract: [[10, 15], [1, 5]] },
+        4: { add: [[1, 5], [15, 20]], subtract: [[15, 20], [1, 5]] },
+        5: { add: [[5, 10], [5, 10]], subtract: [[5, 10], [5, 10]] },
+        6: { add: [[5, 10], [10, 15]], subtract: [[10, 15], [5, 10]] },
+        7: { add: [[5, 10], [15, 20]], subtract: [[15, 20], [5, 10]] },
+        8: { add: [[1, 10], [20, 90]], subtract: [[20, 90], [1, 10]] },
+        9: { add: [[10, 99], [10, 99]], subtract: [[10, 99], [10, 99]], vertical: true }
+    };
+    
+    let currentQuestionIndex = 0;
+    let correctAnswers = 0;
+    let wrongAnswers = 0;
+    let currentAnswer = ""; 
+    let correctAnswerValue = 0; 
+    let timerInterval;
+    let remainingSeconds = 0;
+    let selectedTimeSeconds = 0;
+    let gameStartTimestamp = 0;
+    let lastQuestionStr = ""; 
+    let confettiTimeout;
+    let confettiLoopTimeout;
+    let timerLimitActive = false;
+    let chanceModeEnabled = false;
+    let retryQuestions = [];
+    let generatedQuestionCount = 0;
+    let currentQuestionData = null;
+
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function formatRange(range) {
+        return `${range[0]}-${range[1]}`;
+    }
+
+    function updateLevelOptions() {
+        const selectedOperation = document.querySelector('input[name="operationMode"]:checked').value;
+        const levelSelect = document.getElementById('levelSelect');
+
+        Object.keys(levelConfigs).forEach(level => {
+            const option = levelSelect.querySelector(`option[value="${level}"]`);
+            const config = levelConfigs[level];
+            let ranges;
+            let symbol;
+
+            if (level === '9') {
+                const levelNineDescription = selectedOperation === 'add'
+                    ? 'Bersusun tanpa menyimpan'
+                    : selectedOperation === 'subtract'
+                        ? 'Bersusun tanpa meminjam'
+                        : 'Bersusun campuran';
+
+                option.textContent = `Level 9 (${levelNineDescription})`;
+                return;
+            }
+
+            if (selectedOperation === 'add') {
+                ranges = config.add;
+                symbol = '+';
+            } else if (selectedOperation === 'subtract') {
+                ranges = config.subtract;
+                symbol = '-';
+            } else {
+                ranges = config.subtract;
+                symbol = '&';
+            }
+
+            option.textContent = `Level ${level} (${formatRange(ranges[0])} ${symbol} ${formatRange(ranges[1])})`;
+        });
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function updateTimerColor() {
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (!timerDisplay) return;
+
+        if (timerLimitActive && remainingSeconds <= 10 && remainingSeconds >= 0) {
+            timerDisplay.classList.add('critical');
+        } else {
+            timerDisplay.classList.remove('critical');
+        }
+    }
+
+    function updateTimeSummary() {
+        const selectedEl = document.getElementById('time-selected-value');
+        const usedEl = document.getElementById('time-used-value');
+        const remainingEl = document.getElementById('time-remaining-value');
+
+        if (!selectedEl || !usedEl || !remainingEl) return;
+
+        if (selectedTimeSeconds > 0) {
+            const safeRemaining = Math.max(Math.min(remainingSeconds, selectedTimeSeconds), 0);
+            const usedSeconds = Math.max(selectedTimeSeconds - safeRemaining, 0);
+
+            selectedEl.textContent = formatTime(selectedTimeSeconds);
+            usedEl.textContent = formatTime(usedSeconds);
+            remainingEl.textContent = formatTime(safeRemaining);
+        } else {
+            const elapsedSeconds = gameStartTimestamp > 0
+                ? Math.max(Math.floor((Date.now() - gameStartTimestamp) / 1000), 0)
+                : 0;
+
+            selectedEl.textContent = 'Bebas';
+            usedEl.textContent = formatTime(elapsedSeconds);
+            remainingEl.textContent = '—';
+        }
+    }
+
+    function resetHeaderTimer() {
+        remainingSeconds = 0;
+        timerLimitActive = false;
+
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (timerDisplay) {
+            timerDisplay.textContent = '00:00';
+        }
+
+        updateTimerColor();
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement &&
+            !document.mozFullScreenElement &&
+            !document.webkitFullscreenElement &&
+            !document.msFullscreenElement) {
+
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+        }
+    }
+
+    function clampNumber(value, min, max, fallback) {
+        const parsed = parseInt(value);
+        if (isNaN(parsed)) return fallback;
+        return Math.min(Math.max(parsed, min), max);
+    }
+
+    function normalizeValue(inputId, min, max, fallback) {
+        const input = document.getElementById(inputId);
+        const normalized = clampNumber(input.value, min, max, fallback);
+        input.value = normalized;
+        return normalized;
+    }
+
+    function stepValue(inputId, delta, min, max) {
+        const input = document.getElementById(inputId);
+        let current = parseInt(input.value);
+        if (isNaN(current)) current = min;
+
+        let nextValue = current + delta;
+        if (nextValue > max) nextValue = min;
+        if (nextValue < min) nextValue = max;
+
+        input.value = nextValue;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function renderDigitGroup(value) {
+        const digits = String(value).split('');
+        const multiClass = digits.length > 1 ? ' multi-digit' : '';
+        return `<span class="digit-group${multiClass}">${digits.map(d => `<span>${d}</span>`).join('')}</span>`;
+    }
+
+    function renderQuestionDisplay(n1, operator, n2, isVertical = false) {
+        const operatorSymbol = operator === '-' ? '−' : operator;
+
+        if (isVertical) {
+            return `
+                <div class="vertical-question">
+                    <div class="vertical-number">${renderDigitGroup(n1)}</div>
+                    <div class="vertical-number">${renderDigitGroup(n2)}</div>
+                    <div class="vertical-divider">
+                        <span class="vertical-line"></span>
+                        <span class="vertical-operator">${operatorSymbol}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `${renderDigitGroup(n1)}<span class="math-operator">${operatorSymbol}</span>${renderDigitGroup(n2)}`;
+    }
+
+    const themeIcons = {
+        light: '<svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/><path d="m5 5 1.5 1.5"/><path d="m17.5 17.5 1.5 1.5"/><path d="m19 5-1.5 1.5"/><path d="m6.5 17.5L5 19"/><circle cx="12" cy="12" r="4"/></svg>',
+        dark: '<svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 7 7 0 1 0 20 15.5Z"/></svg>'
+    };
+
+    function setTheme(theme) {
+        const safeTheme = theme === 'dark' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', safeTheme);
+        const themeIcon = document.getElementById('themeIcon');
+        const themeToggle = document.getElementById('themeToggle');
+
+        if (themeIcon) {
+            themeIcon.innerHTML = safeTheme === 'dark' ? themeIcons.dark : themeIcons.light;
+        }
+
+        if (themeToggle) {
+            themeToggle.setAttribute('aria-label', safeTheme === 'dark' ? 'Aktifkan tema terang' : 'Aktifkan tema gelap');
+            themeToggle.setAttribute('title', safeTheme === 'dark' ? 'Tema Gelap' : 'Tema Terang');
+        }
+
+        try {
+            localStorage.setItem('rafaHitungTheme', safeTheme);
+        } catch (error) {}
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    function startGame() {
+        clearConfetti();
+        currentLevel = parseInt(document.getElementById('levelSelect').value);
+        currentOperation = document.querySelector('input[name="operationMode"]:checked').value;
+        
+        const qVal = normalizeValue('questionCount', 1, 100, 20);
+        totalQuestionsSetting = (qVal === 0 || isNaN(qVal)) ? Infinity : qVal;
+
+        const minutes = normalizeValue('timeMin', 0, 60, 1);
+        const seconds = normalizeValue('timeSec', 0, 59, 0);
+        
+        currentQuestionIndex = 0;
+        correctAnswers = 0;
+        wrongAnswers = 0;
+        currentAnswer = "";
+        lastQuestionStr = "";
+        chanceModeEnabled = document.getElementById('chanceMode').checked;
+        retryQuestions = [];
+        generatedQuestionCount = 0;
+        currentQuestionData = null;
+
+        selectedTimeSeconds = (minutes * 60) + seconds;
+        remainingSeconds = selectedTimeSeconds;
+        gameStartTimestamp = Date.now();
+        timerLimitActive = remainingSeconds > 0;
+        document.getElementById('timerDisplay').textContent = formatTime(remainingSeconds);
+        updateTimerColor();
+        document.getElementById('questionCounter').style.display = 'grid'; 
+        
+        clearInterval(timerInterval);
+        if(remainingSeconds > 0) {
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        updateInputDisplay();
+        generateQuestion();
+        showScreen('game-screen');
+    }
+
+    function updateTimer() {
+        remainingSeconds = Math.max(remainingSeconds - 1, 0);
+        document.getElementById('timerDisplay').textContent = formatTime(remainingSeconds);
+        updateTimerColor();
+
+        if (remainingSeconds === 0) {
+            finishGame();
+        }
+    }
+
+    function updateQuestionCounter() {
+        const counterEl = document.getElementById('questionCounter');
+
+        if (chanceModeEnabled && totalQuestionsSetting !== Infinity) {
+            const progressNumber = Math.min(correctAnswers + 1, totalQuestionsSetting);
+            counterEl.textContent = `${progressNumber}/${totalQuestionsSetting}`;
+            return;
+        }
+
+        if (totalQuestionsSetting === Infinity) {
+            counterEl.textContent = `Soal: ${currentQuestionIndex + 1}`;
+        } else {
+            counterEl.textContent = `${currentQuestionIndex + 1}/${totalQuestionsSetting}`;
+        }
+    }
+
+    function createLevelNineNumbers(operationForQuestion) {
+        if (operationForQuestion === 'add') {
+            const tens1 = getRandomInt(1, 8);
+            const tens2 = getRandomInt(1, 9 - tens1);
+            const units1 = getRandomInt(0, 9);
+            const units2 = getRandomInt(0, 9 - units1);
+
+            return {
+                n1: (tens1 * 10) + units1,
+                n2: (tens2 * 10) + units2
+            };
+        }
+
+        const tens1 = getRandomInt(1, 9);
+        const units1 = getRandomInt(0, 9);
+        const tens2 = getRandomInt(1, tens1);
+        const units2 = getRandomInt(0, units1);
+
+        return {
+            n1: (tens1 * 10) + units1,
+            n2: (tens2 * 10) + units2
+        };
+    }
+
+    function createRandomQuestionData() {
+        let n1, n2, operator, answer;
+        let newQuestionStr = "";
+        let valid = false;
+        let attempts = 0;
+
+        while (!valid && attempts < 1000) {
+            attempts++;
+
+            const config = levelConfigs[currentLevel];
+            const operationForQuestion = currentOperation === 'mixed'
+                ? (Math.random() > 0.5 ? 'add' : 'subtract')
+                : currentOperation;
+            const ranges = currentOperation === 'mixed'
+                ? config.subtract
+                : (operationForQuestion === 'add' ? config.add : config.subtract);
+
+            if (currentLevel === 9) {
+                const levelNineNumbers = createLevelNineNumbers(operationForQuestion);
+                n1 = levelNineNumbers.n1;
+                n2 = levelNineNumbers.n2;
+            } else {
+                n1 = getRandomInt(ranges[0][0], ranges[0][1]);
+                n2 = getRandomInt(ranges[1][0], ranges[1][1]);
+            }
+
+            operator = operationForQuestion === 'add' ? '+' : '-';
+
+            if (currentLevel !== 9 && operationForQuestion === 'add' && currentOperation === 'add') {
+                if (Math.random() > 0.5) {
+                    let temp = n1;
+                    n1 = n2;
+                    n2 = temp;
+                }
+            }
+
+            if (currentLevel !== 9 && operationForQuestion === 'subtract' && n2 > n1) {
+                let temp = n1;
+                n1 = n2;
+                n2 = temp;
+            }
+
+            answer = operator === '+' ? n1 + n2 : n1 - n2;
+            newQuestionStr = `${n1} ${operator} ${n2}`;
+
+            if (newQuestionStr !== lastQuestionStr && answer <= 99) {
+                valid = true;
+            }
+        }
+
+        return {
+            n1,
+            n2,
+            operator,
+            answer,
+            questionStr: newQuestionStr,
+            hasWrongAttempt: false,
+            displayNumber: 1
+        };
+    }
+
+    function showQuestion(questionData) {
+        currentQuestionData = questionData;
+        lastQuestionStr = questionData.questionStr;
+        correctAnswerValue = questionData.answer;
+
+        updateQuestionCounter();
+
+        const questionArea = document.querySelector('.question-area');
+        const isVerticalLevel = currentLevel === 9;
+        questionArea.classList.toggle('vertical-mode', isVerticalLevel);
+        document.getElementById('question-text').innerHTML = renderQuestionDisplay(
+            questionData.n1,
+            questionData.operator,
+            questionData.n2,
+            isVerticalLevel
+        );
+
+        currentAnswer = "";
+        updateInputDisplay();
+    }
+
+    function generateQuestion() {
+        let nextQuestion;
+
+        if (chanceModeEnabled && totalQuestionsSetting !== Infinity) {
+            if (generatedQuestionCount < totalQuestionsSetting) {
+                nextQuestion = createRandomQuestionData();
+                generatedQuestionCount++;
+                nextQuestion.displayNumber = generatedQuestionCount;
+            } else if (retryQuestions.length > 0) {
+                nextQuestion = retryQuestions.shift();
+                nextQuestion.displayNumber = totalQuestionsSetting;
+            } else {
+                finishGame();
+                return;
+            }
+        } else {
+            nextQuestion = createRandomQuestionData();
+        }
+
+        showQuestion(nextQuestion);
+    }
+
+    function inputNum(num) {
+        if (currentAnswer.length < 2) {
+            currentAnswer += num;
+            updateInputDisplay();
+        }
+    }
+
+    function deleteInput() {
+        currentAnswer = currentAnswer.slice(0, -1);
+        updateInputDisplay();
+    }
+
+    function updateInputDisplay() {
+        const target = document.getElementById('user-input');
+        target.innerHTML = currentAnswer ? renderDigitGroup(currentAnswer) : '';
+    }
+
+    function submitAnswer() {
+        if (currentAnswer === "") return;
+
+        const userVal = parseInt(currentAnswer);
+
+        if (chanceModeEnabled && totalQuestionsSetting !== Infinity) {
+            if (userVal === correctAnswerValue) {
+                correctAnswers++;
+
+                if (currentQuestionData && currentQuestionData.hasWrongAttempt) {
+                    wrongAnswers = Math.max(wrongAnswers - 1, 0);
+                    currentQuestionData.hasWrongAttempt = false;
+                }
+            } else {
+                if (currentQuestionData) {
+                    if (!currentQuestionData.hasWrongAttempt) {
+                        wrongAnswers++;
+                        currentQuestionData.hasWrongAttempt = true;
+                    }
+
+                    retryQuestions.push(currentQuestionData);
+                }
+            }
+
+            if (correctAnswers >= totalQuestionsSetting) {
+                finishGame();
+            } else if (generatedQuestionCount >= totalQuestionsSetting && retryQuestions.length === 0) {
+                finishGame();
+            } else {
+                generateQuestion();
+            }
+
+            return;
+        }
+
+        if (userVal === correctAnswerValue) {
+            correctAnswers++;
+        } else {
+            wrongAnswers++;
+        }
+
+        currentQuestionIndex++;
+
+        if (totalQuestionsSetting !== Infinity && currentQuestionIndex >= totalQuestionsSetting) {
+            finishGame();
+        } else {
+            generateQuestion();
+        }
+    }
+
+    function finishGame() {
+        clearInterval(timerInterval);
+        document.getElementById('questionCounter').style.display = 'none'; 
+
+        const isFixedQuestionMode = totalQuestionsSetting !== Infinity;
+        let totalDone = correctAnswers + wrongAnswers;
+        let totalForScore = isFixedQuestionMode ? totalQuestionsSetting : totalDone;
+        let unansweredQuestions = isFixedQuestionMode ? Math.max(totalQuestionsSetting - totalDone, 0) : 0;
+
+        if (chanceModeEnabled && isFixedQuestionMode) {
+            totalForScore = totalQuestionsSetting;
+            totalDone = correctAnswers + wrongAnswers;
+            unansweredQuestions = Math.max(totalQuestionsSetting - totalDone, 0);
+        }
+
+        let score = 0;
+
+        if (totalForScore > 0) {
+            score = Math.round((correctAnswers / totalForScore) * 100);
+        }
+
+        document.getElementById('final-score').innerHTML = renderDigitGroup(score);
+        document.getElementById('stat-correct').textContent = correctAnswers;
+        document.getElementById('stat-wrong').textContent = wrongAnswers;
+        document.getElementById('stat-unanswered').textContent = unansweredQuestions;
+        document.getElementById('stat-total').textContent = totalForScore;
+
+        updateTimeSummary();
+        resetHeaderTimer();
+        showScreen('result-screen');
+
+        if (score === 100) {
+            startConfetti();
+        } else {
+            clearConfetti();
+        }
+    }
+
+    function startConfetti() {
+        clearConfetti();
+        launchConfettiBurst();
+    }
+
+    function launchConfettiBurst() {
+        const confettiLayer = document.getElementById('confettiLayer');
+        const colors = ['#ff5252', '#ffeb3b', '#4caf50', '#2196f3', '#9c27b0', '#ff9800'];
+
+        confettiLayer.innerHTML = '';
+
+        for (let i = 0; i < 120; i++) {
+            const confetti = document.createElement('span');
+            confetti.className = 'confetti-piece';
+            confetti.style.left = `${Math.random() * 100}%`;
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDuration = `${2.5 + Math.random() * 2}s`;
+            confetti.style.animationDelay = `${Math.random() * 0.8}s`;
+            confetti.style.setProperty('--drift', `${(Math.random() - 0.5) * 220}px`);
+            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            confettiLayer.appendChild(confetti);
+        }
+
+        confettiTimeout = setTimeout(() => {
+            confettiLayer.innerHTML = '';
+            confettiLoopTimeout = setTimeout(launchConfettiBurst, 5000);
+        }, 5000);
+    }
+
+    function clearConfetti() {
+        clearTimeout(confettiTimeout);
+        clearTimeout(confettiLoopTimeout);
+        const confettiLayer = document.getElementById('confettiLayer');
+        if (confettiLayer) {
+            confettiLayer.innerHTML = '';
+        }
+    }
+
+    function goHome() {
+        clearInterval(timerInterval);
+        clearConfetti();
+        document.getElementById('questionCounter').style.display = 'none';
+        resetHeaderTimer();
+        selectedTimeSeconds = 0;
+        gameStartTimestamp = 0;
+        chanceModeEnabled = false;
+        retryQuestions = [];
+        generatedQuestionCount = 0;
+        currentQuestionData = null;
+        document.querySelector('.question-area').classList.remove('vertical-mode');
+        showScreen('menu-screen');
+    }
+
+    document.querySelectorAll('.num-key').forEach(button => {
+        const showPressColor = () => {
+            button.classList.add('key-pressed');
+
+            // Fallback inline agar warna kuning tetap muncul di perangkat/browser
+            // yang kadang melewatkan efek :active pada tombol besar touch/click.
+            button.style.backgroundColor = 'var(--secondary-color)';
+            button.style.color = '#071225';
+            button.style.borderColor = 'var(--secondary-color)';
+            button.style.boxShadow = '0 0 0 5px rgba(250, 204, 21, 0.28)';
+
+            clearTimeout(button._pressTimer);
+            button._pressTimer = setTimeout(() => {
+                button.classList.remove('key-pressed');
+                button.style.removeProperty('background-color');
+                button.style.removeProperty('color');
+                button.style.removeProperty('border-color');
+                button.style.removeProperty('box-shadow');
+            }, 240);
+        };
+
+        button.addEventListener('pointerdown', showPressColor);
+        button.addEventListener('mousedown', showPressColor);
+        button.addEventListener('touchstart', showPressColor, { passive: true });
+        button.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                showPressColor();
+            }
+        });
+    });
+
+    document.querySelectorAll('input[name="operationMode"]').forEach(input => {
+        input.addEventListener('change', updateLevelOptions);
+    });
+
+    document.getElementById('questionCount').addEventListener('change', () => normalizeValue('questionCount', 1, 100, 20));
+    document.getElementById('timeMin').addEventListener('change', () => normalizeValue('timeMin', 0, 60, 1));
+    document.getElementById('timeSec').addEventListener('change', () => normalizeValue('timeSec', 0, 59, 0));
+
+    try {
+        setTheme(localStorage.getItem('rafaHitungTheme') || 'light');
+    } catch (error) {
+        setTheme('light');
+    }
+
+    updateLevelOptions();
+</script>
+
+</body>
+</html>
