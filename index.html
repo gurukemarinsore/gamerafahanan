@@ -2288,6 +2288,38 @@
         return vector;
     }
 
+    function classifyDigitMLP(vector) {
+        const weights = digitRecognitionModel.w;
+        const biases = digitRecognitionModel.b;
+        const logits = biases.slice();
+        const inputLength = Math.min(vector.length, weights.length);
+
+        for (let i = 0; i < inputLength; i++) {
+            const value = vector[i];
+            if (!value) continue;
+            const row = weights[i];
+            for (let digit = 0; digit < 10; digit++) {
+                logits[digit] += value * row[digit];
+            }
+        }
+
+        let bestDigit = 0;
+        for (let digit = 1; digit < 10; digit++) {
+            if (logits[digit] > logits[bestDigit]) bestDigit = digit;
+        }
+
+        const maxLogit = Math.max(...logits);
+        let expSum = 0;
+        const expValues = logits.map(logit => {
+            const value = Math.exp(logit - maxLogit);
+            expSum += value;
+            return value;
+        });
+        const confidence = expSum > 0 ? expValues[bestDigit] / expSum : 0;
+
+        return { digit: bestDigit, confidence: confidence };
+    }
+
     function classifyDigit(vector) {
         // JALUR 1: Menggunakan TensorFlow.js jika sedang online & model terunduh
         if (isUsingTensorFlow && tfModel && typeof tf !== 'undefined') {
@@ -2336,16 +2368,7 @@
 
     function predictWithTensorFlow(vector) {
         return tf.tidy(() => {
-            let inputTensor;
-            if (vector.length === 784) {
-                inputTensor = tf.tensor4d(vector, [1, 28, 28, 1]);
-            } else {
-                inputTensor = tf.tensor4d(vector, [1, 16, 16, 1]);
-                if (tfModel.inputs && tfModel.inputs[0].shape[1] === 28) {
-                    inputTensor = tf.image.resizeBilinear(inputTensor, [28, 28]);
-                }
-            }
-
+            const inputTensor = tf.tensor2d(vector, [1, 784], 'float32');
             const prediction = tfModel.predict(inputTensor);
             const probabilities = prediction.dataSync();
             const bestDigit = prediction.argMax(-1).dataSync()[0];
