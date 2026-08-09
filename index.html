@@ -1598,6 +1598,42 @@
 </div>
 
 <script>
+// ============================================================
+    // KODE HYBRID TENSORFLOW.JS (SISTEM OTOMATIS ONLINE/OFFLINE)
+    // ============================================================
+    let tfModel = null;
+    let isUsingTensorFlow = false;
+
+    async function initHandwritingAI() {
+        if (!navigator.onLine) {
+            console.log("Status: Offline. Menggunakan MLP Bawaan (Pure JS).");
+            isUsingTensorFlow = false;
+            return;
+        }
+
+        try {
+            await loadDynamicScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js");
+            tfModel = await tf.loadLayersModel('./model/model.json');
+            isUsingTensorFlow = true;
+            console.log("Status: Online! Berhasil memuat TensorFlow.js CNN Model.");
+        } catch (error) {
+            console.warn("Gagal memuat TensorFlow.js / Model file. Fallback ke MLP Bawaan.", error);
+            isUsingTensorFlow = false;
+        }
+    }
+
+    function loadDynamicScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', initHandwritingAI);
+    // ============================================================
     let currentLevel = 1;
     let currentOperation = 'add';
     let totalQuestionsSetting = 10;
@@ -2253,6 +2289,38 @@
     }
 
     function classifyDigit(vector) {
+        // JALUR 1: Menggunakan TensorFlow.js jika sedang online & model terunduh
+        if (isUsingTensorFlow && tfModel && typeof tf !== 'undefined') {
+            try {
+                return predictWithTensorFlow(vector);
+            } catch (err) {
+                console.error("TensorFlow Error, beralih ke MLP Bawaan:", err);
+            }
+        }
+        // JALUR 2: Menggunakan MLP Bawaan (Offline / Fallback)
+        return classifyDigitMLP(vector);
+    }
+
+    function predictWithTensorFlow(vector256) {
+        return tf.tidy(() => {
+            // Mengubah array 256 piksel menjadi tensor 4D [1, 16, 16, 1]
+            let inputTensor = tf.tensor4d(vector256, [1, 16, 16, 1]);
+            
+            // Otomatis menyesuaikan jika model CNN Anda dilatih pada standar MNIST (28x28)
+            if (tfModel.inputs && tfModel.inputs[0].shape[1] === 28) {
+                inputTensor = tf.image.resizeBilinear(inputTensor, [28, 28]);
+            }
+
+            const prediction = tfModel.predict(inputTensor);
+            const probabilities = prediction.dataSync();
+            const bestDigit = prediction.argMax(-1).dataSync()[0];
+            const confidence = probabilities[bestDigit];
+
+            return { digit: bestDigit, confidence: confidence };
+        });
+    }
+
+    function classifyDigitMLP(vector) {
         const model = digitRecognitionModel;
         let bestDigit = 0;
         let bestScore = -Infinity;
