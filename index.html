@@ -1613,7 +1613,7 @@
 
         try {
             await loadDynamicScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js");
-            tfModel = await tf.loadLayersModel('./model/model.json');
+            tfModel = await tf.loadLayersModel('https://cdn.jsdelivr.net/gh/google/tfjs-mnist-workshop@master/model/model.json');
             isUsingTensorFlow = true;
             console.log("Status: Online! Berhasil memuat TensorFlow.js CNN Model.");
         } catch (error) {
