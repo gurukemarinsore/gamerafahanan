@@ -1598,42 +1598,6 @@
 </div>
 
 <script>
-// ============================================================
-    // KODE HYBRID TENSORFLOW.JS (SISTEM OTOMATIS ONLINE/OFFLINE)
-    // ============================================================
-    let tfModel = null;
-    let isUsingTensorFlow = false;
-
-    async function initHandwritingAI() {
-        if (!navigator.onLine) {
-            console.log("Status: Offline. Menggunakan MLP Bawaan (Pure JS).");
-            isUsingTensorFlow = false;
-            return;
-        }
-
-        try {
-            await loadDynamicScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js");
-            tfModel = await tf.loadLayersModel('./model/model.json');
-            isUsingTensorFlow = true;
-            console.log("Status: Online! Berhasil memuat TensorFlow.js CNN Model.");
-        } catch (error) {
-            console.warn("Gagal memuat TensorFlow.js / Model file. Fallback ke MLP Bawaan.", error);
-            isUsingTensorFlow = false;
-        }
-    }
-
-    function loadDynamicScript(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-
-    window.addEventListener('DOMContentLoaded', initHandwritingAI);
-    // ============================================================
     let currentLevel = 1;
     let currentOperation = 'add';
     let totalQuestionsSetting = 10;
@@ -2288,94 +2252,28 @@
         return vector;
     }
 
-    function classifyDigitMLP(vector) {
-        const weights = digitRecognitionModel.w;
-        const biases = digitRecognitionModel.b;
-        const logits = biases.slice();
-        const inputLength = Math.min(vector.length, weights.length);
-
-        for (let i = 0; i < inputLength; i++) {
-            const value = vector[i];
-            if (!value) continue;
-            const row = weights[i];
-            for (let digit = 0; digit < 10; digit++) {
-                logits[digit] += value * row[digit];
-            }
-        }
-
-        let bestDigit = 0;
-        for (let digit = 1; digit < 10; digit++) {
-            if (logits[digit] > logits[bestDigit]) bestDigit = digit;
-        }
-
-        const maxLogit = Math.max(...logits);
-        let expSum = 0;
-        const expValues = logits.map(logit => {
-            const value = Math.exp(logit - maxLogit);
-            expSum += value;
-            return value;
-        });
-        const confidence = expSum > 0 ? expValues[bestDigit] / expSum : 0;
-
-        return { digit: bestDigit, confidence: confidence };
-    }
-
     function classifyDigit(vector) {
-        // JALUR 1: Menggunakan TensorFlow.js jika sedang online & model terunduh
-        if (isUsingTensorFlow && tfModel && typeof tf !== 'undefined') {
-            try {
-                return predictWithTensorFlow(vector);
-            } catch (err) {
-                console.error("TensorFlow Error, beralih ke MLP Bawaan:", err);
+        const model = digitRecognitionModel;
+        let bestDigit = 0;
+        let bestScore = -Infinity;
+        const scores = new Array(10);
+
+        for (let digit = 0; digit < 10; digit++) {
+            let score = model.b[digit];
+            for (let i = 0; i < vector.length; i++) {
+                score += vector[i] * model.w[i][digit];
+            }
+            scores[digit] = score;
+            if (score > bestScore) {
+                bestScore = score;
+                bestDigit = digit;
             }
         }
-        // JALUR 2: Menggunakan MLP Bawaan (Offline / Fallback)
-        return classifyDigitMLP(vector);
-    }
 
-    function normalizeDigit28(canvas, ink, rawRegion) {
-        const region = tightenDigitRegion(ink, rawRegion);
-        const sourceWidth = Math.max(1, region.x2 - region.x1 + 1);
-        const sourceHeight = Math.max(1, region.y2 - region.y1 + 1);
-        const target = document.createElement('canvas');
-        target.width = 28;
-        target.height = 28;
-        const ctx = target.getContext('2d', { willReadFrequently: true });
-        ctx.clearRect(0, 0, 28, 28);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-
-        // Masukkan gambar tajam langsung ke bingkai 28x28 (margin 4px)
-        const scale = Math.min(20 / sourceWidth, 20 / sourceHeight);
-        const drawWidth = Math.max(1, sourceWidth * scale);
-        const drawHeight = Math.max(1, sourceHeight * scale);
-        const dx = (28 - drawWidth) / 2;
-        const dy = (28 - drawHeight) / 2;
-
-        ctx.drawImage(
-            canvas,
-            region.x1, region.y1, sourceWidth, sourceHeight,
-            dx, dy, drawWidth, drawHeight
-        );
-
-        const data = ctx.getImageData(0, 0, 28, 28).data;
-        const vector = new Float32Array(784);
-        for (let i = 0; i < 784; i++) {
-            vector[i] = data[i * 4 + 3] / 255.0;
-        }
-        return vector;
-    }
-
-    function predictWithTensorFlow(vector) {
-        return tf.tidy(() => {
-            const inputTensor = tf.tensor2d(vector, [1, 784], 'float32');
-            const prediction = tfModel.predict(inputTensor);
-            const probabilities = prediction.dataSync();
-            const bestDigit = prediction.argMax(-1).dataSync()[0];
-            const confidence = probabilities[bestDigit];
-
-            return { digit: bestDigit, confidence: confidence };
-        });
+        const maxScore = Math.max(...scores);
+        const exps = scores.map(value => Math.exp(value - maxScore));
+        const total = exps.reduce((a, b) => a + b, 0) || 1;
+        return { digit: bestDigit, confidence: exps[bestDigit] / total };
     }
 
     function recognizeHandwrittenAnswer() {
@@ -2386,10 +2284,7 @@
 
         const regions = splitDigitRegions(ink).slice(0, 2);
         return regions.map(region => {
-            // Jika TensorFlow aktif, gunakan resolusi tajam 28x28 langsung tanpa blur!
-            const vector = (isUsingTensorFlow && tfModel) 
-                ? normalizeDigit28(analysisCanvas, ink, region)
-                : normalizeDigit(analysisCanvas, ink, region);
+            const vector = normalizeDigit(analysisCanvas, ink, region);
             return String(classifyDigit(vector).digit);
         }).join('');
     }
