@@ -2301,14 +2301,49 @@
         return classifyDigitMLP(vector);
     }
 
-    function predictWithTensorFlow(vector256) {
+    function normalizeDigit28(canvas, ink, rawRegion) {
+        const region = tightenDigitRegion(ink, rawRegion);
+        const sourceWidth = Math.max(1, region.x2 - region.x1 + 1);
+        const sourceHeight = Math.max(1, region.y2 - region.y1 + 1);
+        const target = document.createElement('canvas');
+        target.width = 28;
+        target.height = 28;
+        const ctx = target.getContext('2d', { willReadFrequently: true });
+        ctx.clearRect(0, 0, 28, 28);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Masukkan gambar tajam langsung ke bingkai 28x28 (margin 4px)
+        const scale = Math.min(20 / sourceWidth, 20 / sourceHeight);
+        const drawWidth = Math.max(1, sourceWidth * scale);
+        const drawHeight = Math.max(1, sourceHeight * scale);
+        const dx = (28 - drawWidth) / 2;
+        const dy = (28 - drawHeight) / 2;
+
+        ctx.drawImage(
+            canvas,
+            region.x1, region.y1, sourceWidth, sourceHeight,
+            dx, dy, drawWidth, drawHeight
+        );
+
+        const data = ctx.getImageData(0, 0, 28, 28).data;
+        const vector = new Float32Array(784);
+        for (let i = 0; i < 784; i++) {
+            vector[i] = data[i * 4 + 3] / 255.0;
+        }
+        return vector;
+    }
+
+    function predictWithTensorFlow(vector) {
         return tf.tidy(() => {
-            // Mengubah array 256 piksel menjadi tensor 4D [1, 16, 16, 1]
-            let inputTensor = tf.tensor4d(vector256, [1, 16, 16, 1]);
-            
-            // Otomatis menyesuaikan jika model CNN Anda dilatih pada standar MNIST (28x28)
-            if (tfModel.inputs && tfModel.inputs[0].shape[1] === 28) {
-                inputTensor = tf.image.resizeBilinear(inputTensor, [28, 28]);
+            let inputTensor;
+            if (vector.length === 784) {
+                inputTensor = tf.tensor4d(vector, [1, 28, 28, 1]);
+            } else {
+                inputTensor = tf.tensor4d(vector, [1, 16, 16, 1]);
+                if (tfModel.inputs && tfModel.inputs[0].shape[1] === 28) {
+                    inputTensor = tf.image.resizeBilinear(inputTensor, [28, 28]);
+                }
             }
 
             const prediction = tfModel.predict(inputTensor);
@@ -2320,30 +2355,6 @@
         });
     }
 
-    function classifyDigitMLP(vector) {
-        const model = digitRecognitionModel;
-        let bestDigit = 0;
-        let bestScore = -Infinity;
-        const scores = new Array(10);
-
-        for (let digit = 0; digit < 10; digit++) {
-            let score = model.b[digit];
-            for (let i = 0; i < vector.length; i++) {
-                score += vector[i] * model.w[i][digit];
-            }
-            scores[digit] = score;
-            if (score > bestScore) {
-                bestScore = score;
-                bestDigit = digit;
-            }
-        }
-
-        const maxScore = Math.max(...scores);
-        const exps = scores.map(value => Math.exp(value - maxScore));
-        const total = exps.reduce((a, b) => a + b, 0) || 1;
-        return { digit: bestDigit, confidence: exps[bestDigit] / total };
-    }
-
     function recognizeHandwrittenAnswer() {
         const analysisCanvas = createAnalysisCanvas();
         if (!analysisCanvas) return '';
@@ -2352,7 +2363,10 @@
 
         const regions = splitDigitRegions(ink).slice(0, 2);
         return regions.map(region => {
-            const vector = normalizeDigit(analysisCanvas, ink, region);
+            // Jika TensorFlow aktif, gunakan resolusi tajam 28x28 langsung tanpa blur!
+            const vector = (isUsingTensorFlow && tfModel) 
+                ? normalizeDigit28(analysisCanvas, ink, region)
+                : normalizeDigit(analysisCanvas, ink, region);
             return String(classifyDigit(vector).digit);
         }).join('');
     }
