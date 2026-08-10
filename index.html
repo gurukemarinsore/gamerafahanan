@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Berhitung Rafa &amp; Hanan v32</title>
+    <title>Game Berhitung Rafa &amp; Hanan v34</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/Yxl2fhm.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900;1000&display=swap');
@@ -724,6 +724,60 @@
             position: relative;
             overflow: hidden;
             padding: 16px;
+            isolation: isolate;
+        }
+
+        .question-scribble-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 0;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .question-scribble-clear {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 42px;
+            min-width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            background: rgba(255, 255, 255, 0.92);
+            color: #ef4444;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+            display: inline-grid;
+            place-items: center;
+            cursor: pointer;
+            z-index: 6;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.88);
+            transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease;
+        }
+
+        body[data-theme="dark"] .question-scribble-clear {
+            background: rgba(31, 41, 55, 0.92);
+        }
+
+        .question-scribble-clear .icon-line {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2;
+        }
+
+        .question-area.has-scribble .question-scribble-clear {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        .question-scribble-clear:active {
+            transform: scale(0.96);
         }
 
         #question-text,
@@ -733,6 +787,8 @@
             justify-content: center;
             gap: 0.2em;
             z-index: 1;
+            pointer-events: none;
+            user-select: none;
         }
 
         #question-text {
@@ -853,6 +909,23 @@
         .question-area.vertical-mode .answer-display .digit-group {
             grid-column: 1;
             justify-self: center;
+        }
+
+
+        @media (max-width: 840px), (max-height: 560px) {
+            .question-scribble-clear {
+                width: 38px;
+                min-width: 38px;
+                height: 38px;
+                border-radius: 12px;
+                top: 10px;
+                right: 10px;
+            }
+
+            .question-scribble-clear .icon-line {
+                width: 20px;
+                height: 20px;
+            }
         }
 
         .numpad {
@@ -3867,6 +3940,10 @@
     <div id="game-screen" class="screen">
         <div class="game-layout">
             <div class="question-area">
+                <canvas id="questionScribbleCanvas" class="question-scribble-canvas" aria-label="Area mencoret soal"></canvas>
+                <button type="button" id="questionScribbleClear" class="question-scribble-clear" onclick="clearQuestionScribble()" title="Hapus coretan soal" aria-label="Hapus coretan soal">
+                    <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7 7 17"/></svg>
+                </button>
                 <div id="question-text">? + ?</div>
                 <div id="user-input" class="answer-display"></div>
             </div>
@@ -4058,6 +4135,11 @@
     let handwritingLastPoint = null;
     let handwritingRecognitionTimer;
     let handwritingResizeObserver = null;
+    let questionScribbleContext = null;
+    let questionScribbleDrawing = false;
+    let questionScribbleHasInk = false;
+    let questionScribbleLastPoint = null;
+    let questionScribbleResizeObserver = null;
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -4712,6 +4794,150 @@
         }
     }
 
+    function getDynamicHandwritingBrushSize(canvas) {
+        if (!canvas) return 12;
+        return Math.max(12, Math.min(canvas.clientWidth || 0, canvas.clientHeight || 0) * 0.055);
+    }
+
+    function updateQuestionScribbleUI() {
+        const area = document.querySelector('.question-area');
+        const clearButton = document.getElementById('questionScribbleClear');
+        const visible = Boolean(questionScribbleHasInk);
+        if (area) area.classList.toggle('has-scribble', visible);
+        if (clearButton) {
+            clearButton.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            clearButton.tabIndex = visible ? 0 : -1;
+        }
+    }
+
+    function initializeQuestionScribbleCanvas() {
+        const canvas = document.getElementById('questionScribbleCanvas');
+        if (!canvas) return;
+
+        questionScribbleContext = canvas.getContext('2d', { willReadFrequently: true });
+        resizeQuestionScribbleCanvas(false);
+        updateQuestionScribbleUI();
+
+        const getPoint = event => {
+            const rect = canvas.getBoundingClientRect();
+            return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        };
+
+        const beginStroke = event => {
+            if (!gameInProgress || inputLocked) return;
+            event.preventDefault();
+
+            questionScribbleDrawing = true;
+            questionScribbleHasInk = true;
+            questionScribbleLastPoint = getPoint(event);
+            updateQuestionScribbleUI();
+
+            try {
+                canvas.setPointerCapture(event.pointerId);
+            } catch (error) {}
+
+            configureQuestionScribbleBrush();
+            questionScribbleContext.beginPath();
+            questionScribbleContext.moveTo(questionScribbleLastPoint.x, questionScribbleLastPoint.y);
+            questionScribbleContext.lineTo(questionScribbleLastPoint.x + 0.01, questionScribbleLastPoint.y + 0.01);
+            questionScribbleContext.stroke();
+        };
+
+        const continueStroke = event => {
+            if (!questionScribbleDrawing || !questionScribbleContext) return;
+            event.preventDefault();
+            const point = getPoint(event);
+            configureQuestionScribbleBrush();
+            questionScribbleContext.beginPath();
+            questionScribbleContext.moveTo(questionScribbleLastPoint.x, questionScribbleLastPoint.y);
+            questionScribbleContext.lineTo(point.x, point.y);
+            questionScribbleContext.stroke();
+            questionScribbleLastPoint = point;
+        };
+
+        const endStroke = event => {
+            if (!questionScribbleDrawing) return;
+            event.preventDefault();
+            questionScribbleDrawing = false;
+            questionScribbleLastPoint = null;
+        };
+
+        canvas.addEventListener('pointerdown', beginStroke);
+        canvas.addEventListener('pointermove', continueStroke);
+        canvas.addEventListener('pointerup', endStroke);
+        canvas.addEventListener('pointercancel', endStroke);
+        canvas.addEventListener('contextmenu', event => event.preventDefault());
+
+        if ('ResizeObserver' in window) {
+            questionScribbleResizeObserver = new ResizeObserver(() => {
+                if (gameInProgress) resizeQuestionScribbleCanvas(true);
+            });
+            questionScribbleResizeObserver.observe(canvas.parentElement);
+        } else {
+            window.addEventListener('resize', () => {
+                if (gameInProgress) resizeQuestionScribbleCanvas(true);
+            });
+        }
+    }
+
+    function configureQuestionScribbleBrush() {
+        if (!questionScribbleContext) return;
+        const canvas = document.getElementById('questionScribbleCanvas');
+        const baseSize = Math.max(6, getDynamicHandwritingBrushSize(canvas) * 0.5);
+        questionScribbleContext.strokeStyle = '#ef4444';
+        questionScribbleContext.lineWidth = baseSize;
+        questionScribbleContext.lineCap = 'round';
+        questionScribbleContext.lineJoin = 'round';
+    }
+
+    function resizeQuestionScribbleCanvas(preserveInk = true) {
+        const canvas = document.getElementById('questionScribbleCanvas');
+        if (!canvas || !questionScribbleContext) return;
+
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) return;
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const targetWidth = Math.max(1, Math.round(rect.width * dpr));
+        const targetHeight = Math.max(1, Math.round(rect.height * dpr));
+
+        if (canvas.width === targetWidth && canvas.height === targetHeight) return;
+
+        let snapshot = null;
+        if (preserveInk && questionScribbleHasInk && canvas.width > 0 && canvas.height > 0) {
+            snapshot = document.createElement('canvas');
+            snapshot.width = canvas.width;
+            snapshot.height = canvas.height;
+            snapshot.getContext('2d').drawImage(canvas, 0, 0);
+        }
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        questionScribbleContext = canvas.getContext('2d', { willReadFrequently: true });
+        questionScribbleContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+        configureQuestionScribbleBrush();
+
+        if (snapshot) {
+            questionScribbleContext.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, rect.width, rect.height);
+        }
+    }
+
+    function clearQuestionScribble() {
+        questionScribbleDrawing = false;
+        questionScribbleLastPoint = null;
+        questionScribbleHasInk = false;
+
+        const canvas = document.getElementById('questionScribbleCanvas');
+        if (canvas && questionScribbleContext) {
+            questionScribbleContext.save();
+            questionScribbleContext.setTransform(1, 0, 0, 1, 0, 0);
+            questionScribbleContext.clearRect(0, 0, canvas.width, canvas.height);
+            questionScribbleContext.restore();
+        }
+
+        updateQuestionScribbleUI();
+    }
+
     function initializeHandwritingCanvas() {
         const canvas = document.getElementById('handwritingCanvas');
         if (!canvas) return;
@@ -4790,7 +5016,7 @@
     function configureHandwritingBrush() {
         if (!handwritingContext) return;
         const canvas = document.getElementById('handwritingCanvas');
-        const baseSize = Math.max(12, Math.min(canvas.clientWidth, canvas.clientHeight) * 0.055);
+        const baseSize = getDynamicHandwritingBrushSize(canvas);
         const inkColor = getComputedStyle(document.body).getPropertyValue('--text-color').trim() || '#0f172a';
         handwritingContext.strokeStyle = inkColor;
         handwritingContext.lineWidth = baseSize;
@@ -5314,6 +5540,7 @@
         lastManualInputMode = 'keypad';
         clearTimeout(feedbackTimeout);
         clearHandwriting(false);
+        clearQuestionScribble();
         stopVoiceRecognition(true);
         setInputMode('keypad');
         setVoiceModeToggleVisibility(true);
@@ -5527,6 +5754,7 @@
         currentAnswer = "";
         inputLocked = false;
         clearHandwriting(false);
+        clearQuestionScribble();
         if (inputMode === 'voice') resetVoicePanel();
         updateInputDisplay();
     }
@@ -5674,6 +5902,7 @@
         setInputModeToggleVisibility(false);
         stopVoiceRecognition(true);
         clearHandwriting(false);
+        clearQuestionScribble();
 
         const isFixedQuestionMode = totalQuestionsSetting !== Infinity;
         let totalDone = correctAnswers + wrongAnswers;
@@ -5760,6 +5989,7 @@
         stopVoiceRecognition(true);
         setInputMode('keypad');
         clearHandwriting(true);
+        clearQuestionScribble();
         renderLives(3);
         resetHeaderTimer();
         selectedTimeSeconds = 0;
@@ -5820,6 +6050,7 @@
     }
 
     initializeHoldStepButtons();
+    initializeQuestionScribbleCanvas();
     initializeHandwritingCanvas();
     updateVoiceAvailability();
     setInputMode('keypad');
