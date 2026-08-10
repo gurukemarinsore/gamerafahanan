@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Berhitung Rafa &amp; Hanan</title>
+    <title>Game Berhitung Rafa &amp; Hanan v30</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/Yxl2fhm.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900;1000&display=swap');
 
@@ -1005,7 +1006,7 @@
         }
 
         .voice-panel.has-result .voice-result {
-            display: flex;
+            display: none;
         }
 
         .voice-mic-main {
@@ -1892,11 +1893,856 @@
                 font-size: 0.9rem;
             }
         }
+    
+
+        /* ========================================================
+           Revisi 29: UI/UX portrait HP + tablet.
+           Landscape/desktop tetap memakai tata letak sebelumnya.
+           ======================================================== */
+        .portrait-input-switches,
+        .portrait-life-count,
+        .portrait-life-heart {
+            display: none;
+        }
+
+        .backspace-icon {
+            width: 31px;
+            height: 31px;
+            stroke-width: 2;
+        }
+
+        @media (orientation: portrait) and (max-width: 1024px) {
+            body {
+                align-items: flex-start;
+                overflow: auto;
+            }
+
+            #app-container {
+                width: 100vw;
+                height: 100dvh;
+                min-height: 100dvh;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+                box-shadow: none;
+            }
+
+            /* ---------- Halaman pengaturan ---------- */
+            #app-container[data-screen="menu-screen"] .header {
+                height: auto;
+                min-height: 112px;
+                padding: 16px 14px 8px;
+                justify-content: center;
+                align-items: flex-start;
+            }
+
+            #app-container[data-screen="menu-screen"] .header-left {
+                width: 100%;
+                justify-content: center;
+            }
+
+            #app-container[data-screen="menu-screen"] .header-right {
+                display: none;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-mini {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, 42px);
+                grid-template-rows: 42px auto;
+                justify-content: center;
+                justify-items: center;
+                align-items: center;
+                column-gap: 10px;
+                row-gap: 10px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-text {
+                display: block !important;
+                grid-column: 1 / -1;
+                width: 100%;
+                text-align: center;
+                white-space: normal;
+                font-size: 1.12rem;
+                line-height: 1.15;
+                letter-spacing: -0.025em;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-home,
+            #app-container[data-screen="menu-screen"] .theme-toggle,
+            #app-container[data-screen="menu-screen"] .btn-fullscreen {
+                width: 42px;
+                min-width: 42px;
+                height: 42px;
+                border-radius: 14px;
+            }
+
+            #menu-screen {
+                justify-content: flex-start;
+                align-items: stretch;
+                gap: 10px;
+                padding: 0 14px 18px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .menu-hero {
+                justify-content: center;
+                align-items: center;
+                padding: 0 4px 2px;
+            }
+
+            #menu-screen h1 {
+                width: 100%;
+                text-align: center;
+                font-size: 1.48rem;
+                line-height: 1.1;
+                letter-spacing: -0.04em;
+            }
+
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                display: block;
+                width: min(100%, 680px);
+                margin: 0 auto;
+                flex: 0 0 auto;
+                min-height: 0;
+                overflow: hidden;
+                border: 1px solid var(--border-color);
+                border-radius: 26px;
+                background: var(--soft-card);
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-card {
+                width: 100%;
+                min-height: 0;
+                border: 0;
+                border-radius: 0;
+                background: transparent;
+                padding: 16px;
+                gap: 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .left-panel {
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            #app-container[data-screen="menu-screen"] .right-panel {
+                padding-top: 16px;
+            }
+
+            #app-container[data-screen="menu-screen"] .card-title h2 {
+                font-size: 1rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .stepper-stack {
+                gap: 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control {
+                grid-template-columns: 58px minmax(0, 1fr) 58px;
+                min-height: 52px;
+                border-radius: 18px;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control input[type="number"] {
+                height: 52px;
+                font-size: 1.5rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .step-btn {
+                min-height: 52px;
+                height: 52px;
+                font-size: 1.45rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider label {
+                min-height: 68px;
+            }
+
+            #app-container[data-screen="menu-screen"] select {
+                min-height: 54px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-toggle {
+                min-height: 50px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-start {
+                min-height: 56px;
+                margin-top: 4px;
+            }
+
+            /* ---------- Halaman bermain ---------- */
+            #app-container[data-screen="game-screen"] .header {
+                height: 58px;
+                min-height: 58px;
+                padding: 10px 12px 8px;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            #app-container[data-screen="game-screen"] .header-right {
+                order: 1;
+                gap: 6px;
+                min-width: 0;
+            }
+
+            #app-container[data-screen="game-screen"] .header-left {
+                order: 2;
+                min-width: 0;
+            }
+
+            #app-container[data-screen="game-screen"] .brand-mini {
+                gap: 6px;
+            }
+
+            #app-container[data-screen="game-screen"] .brand-text {
+                display: none !important;
+            }
+
+            #app-container[data-screen="game-screen"] .voice-mode-toggle,
+            #app-container[data-screen="game-screen"] .input-mode-toggle {
+                display: none !important;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-home,
+            #app-container[data-screen="game-screen"] .theme-toggle,
+            #app-container[data-screen="game-screen"] .btn-fullscreen {
+                width: 36px;
+                min-width: 36px;
+                height: 36px;
+                border-radius: 12px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer {
+                width: auto;
+                min-width: 56px;
+                height: 36px;
+                padding: 0 8px;
+                border-radius: 12px;
+                font-size: 0.92rem;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display {
+                height: 36px;
+                min-width: 52px;
+                padding: 0 7px;
+                border-radius: 12px;
+                gap: 3px;
+            }
+
+            #game-screen {
+                justify-content: flex-start;
+                align-items: stretch;
+                padding: 0 12px 14px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            #app-container[data-screen="game-screen"] .game-layout {
+                width: min(100%, 760px);
+                height: auto;
+                min-height: 0;
+                margin: 0 auto;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-area {
+                --game-font-size: clamp(3.2rem, 15vw, 5.6rem);
+                --question-row-height: calc(var(--game-font-size) * 1.03);
+                --answer-row-height: calc(var(--game-font-size) * 1.15);
+                flex: 0 0 auto;
+                width: 100%;
+                height: 220px;
+                min-height: 220px;
+                padding: 14px;
+                border-radius: 24px;
+                row-gap: 8px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-area.vertical-mode {
+                --vertical-font-size: clamp(2.5rem, 11vw, 4rem);
+                --vertical-answer-size: clamp(2.8rem, 12vw, 4.3rem);
+            }
+
+            #app-container[data-screen="game-screen"] .question-area.vertical-mode #question-text,
+            #app-container[data-screen="game-screen"] .question-area.vertical-mode .answer-display {
+                width: min(66%, 250px);
+            }
+
+            .portrait-input-switches {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .portrait-input-switch {
+                min-height: 48px;
+                border: 1px solid var(--border-color);
+                border-radius: 16px;
+                background: var(--soft-card);
+                color: var(--primary-color);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                cursor: pointer;
+                font-family: inherit;
+                font-size: 0.94rem;
+                font-weight: 1000;
+                transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+            }
+
+            .portrait-input-switch .icon-line {
+                width: 19px;
+                height: 19px;
+            }
+
+            .portrait-input-switch.active {
+                background: var(--primary-color);
+                color: white;
+                border-color: var(--primary-color);
+                box-shadow: var(--button-shadow);
+            }
+
+            .portrait-input-switch:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+
+            .portrait-input-switch:disabled,
+            .portrait-input-switch.unavailable {
+                cursor: not-allowed;
+                color: var(--muted-color);
+                background: var(--surface-alt);
+                opacity: 0.46;
+                box-shadow: none;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad,
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                flex: 0 0 auto;
+                width: 100%;
+                height: auto;
+                min-height: 338px;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad {
+                grid-template-columns: repeat(3, 1fr);
+                grid-auto-rows: minmax(70px, 1fr);
+                gap: 9px;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-num {
+                min-height: 70px;
+                border-radius: 18px;
+                font-size: clamp(2.35rem, 10vw, 3rem);
+            }
+
+            #app-container[data-screen="game-screen"] .btn-del,
+            #app-container[data-screen="game-screen"] .btn-ok {
+                font-size: 2rem;
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                grid-template-rows: minmax(270px, 1fr) 56px;
+                gap: 9px;
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-canvas-wrap,
+            #app-container[data-screen="game-screen"] .voice-stage {
+                min-height: 270px;
+                border-radius: 20px;
+            }
+
+            #app-container[data-screen="game-screen"] .voice-wave {
+                height: 98px;
+            }
+        }
+
+        /* HP portrait: kesempatan diringkas menjadi angka + satu hati. */
+        @media (orientation: portrait) and (max-width: 600px) {
+            #app-container[data-screen="game-screen"] .lives-display .heart-slot {
+                display: none;
+            }
+
+            #app-container[data-screen="game-screen"] .portrait-life-count {
+                display: inline-block;
+                color: var(--text-color);
+                font-size: 0.92rem;
+                font-weight: 1000;
+                line-height: 1;
+            }
+
+            #app-container[data-screen="game-screen"] .portrait-life-heart {
+                display: block;
+                width: 18px;
+                height: 18px;
+                fill: #ef4444;
+                stroke: #dc2626;
+                stroke-width: 1.35;
+                flex: 0 0 auto;
+            }
+
+            #app-container[data-screen="menu-screen"] .header {
+                min-height: 106px;
+                padding-top: 14px;
+            }
+
+            #menu-screen {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                border-radius: 22px;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-card {
+                padding: 14px;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider label {
+                min-height: 62px;
+            }
+        }
+
+        /* Tablet portrait: struktur sama, tetapi dibuat lebih lega dan tetap 3 hati penuh. */
+        @media (orientation: portrait) and (min-width: 601px) and (max-width: 1024px) {
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                width: min(88vw, 720px);
+            }
+
+            #app-container[data-screen="game-screen"] .header {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display {
+                min-width: 78px;
+            }
+
+            #app-container[data-screen="game-screen"] .heart-slot {
+                width: 20px;
+                height: 20px;
+            }
+
+            #app-container[data-screen="game-screen"] .life-heart {
+                width: 19px;
+                height: 19px;
+            }
+
+            #game-screen {
+                padding-left: 22px;
+                padding-right: 22px;
+                padding-bottom: 20px;
+            }
+
+            #app-container[data-screen="game-screen"] .game-layout {
+                gap: 14px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-area {
+                height: 280px;
+                min-height: 280px;
+                border-radius: 28px;
+            }
+
+            .portrait-input-switch {
+                min-height: 54px;
+                border-radius: 18px;
+                font-size: 1rem;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad,
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                min-height: 420px;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad {
+                grid-auto-rows: minmax(88px, 1fr);
+                gap: 11px;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-num {
+                min-height: 88px;
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                grid-template-rows: minmax(340px, 1fr) 62px;
+                gap: 11px;
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-canvas-wrap,
+            #app-container[data-screen="game-screen"] .voice-stage {
+                min-height: 340px;
+            }
+        }
+
+
+        /* ========================================================
+           Revisi 30: penyempurnaan khusus HP portrait.
+           - Header konsisten: kontrol kiri, info permainan kanan.
+           - Judul brand satu baris.
+           - Halaman pengaturan dipadatkan agar muat satu layar.
+           - Ikon backspace diperbesar dan dipusatkan presisi.
+           Tablet portrait, landscape, dan desktop tidak diubah.
+           ======================================================== */
+        @media (orientation: portrait) and (max-width: 600px) {
+            /* ---------- Header halaman pengaturan ---------- */
+            #app-container[data-screen="menu-screen"] .header {
+                height: auto;
+                min-height: 76px;
+                padding: 8px 12px 4px;
+                justify-content: flex-start;
+                align-items: flex-start;
+            }
+
+            #app-container[data-screen="menu-screen"] .header-left {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-mini {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, 38px) minmax(0, 1fr);
+                grid-template-rows: 38px 20px;
+                justify-content: start;
+                justify-items: start;
+                align-items: center;
+                column-gap: 8px;
+                row-gap: 5px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-text {
+                display: block !important;
+                grid-column: 1 / -1;
+                grid-row: 2;
+                width: 100%;
+                text-align: left;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: clip;
+                font-size: clamp(0.9rem, 4vw, 1rem);
+                line-height: 1;
+                letter-spacing: -0.025em;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-home,
+            #app-container[data-screen="menu-screen"] .theme-toggle,
+            #app-container[data-screen="menu-screen"] .btn-fullscreen {
+                width: 38px;
+                min-width: 38px;
+                height: 38px;
+                border-radius: 13px;
+            }
+
+            /* ---------- Pengaturan satu layar tanpa scroll ---------- */
+            #menu-screen {
+                gap: 5px;
+                padding: 0 10px 8px;
+                overflow: hidden;
+            }
+
+            .menu-hero {
+                justify-content: flex-start;
+                align-items: center;
+                padding: 0 2px;
+                flex: 0 0 auto;
+            }
+
+            #menu-screen h1 {
+                text-align: left;
+                font-size: clamp(1.18rem, 5.4vw, 1.38rem);
+                line-height: 1;
+                margin: 0;
+            }
+
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                width: 100%;
+                margin: 0;
+                flex: 1 1 auto;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                border-radius: 18px;
+                overflow: hidden;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-card {
+                padding: 8px 10px;
+                gap: 6px;
+                flex: 0 0 auto;
+            }
+
+            #app-container[data-screen="menu-screen"] .left-panel {
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            #app-container[data-screen="menu-screen"] .right-panel {
+                padding-top: 8px;
+                padding-bottom: 8px;
+                flex: 1 1 auto;
+            }
+
+            #app-container[data-screen="menu-screen"] .card-title h2 {
+                font-size: 0.88rem;
+                line-height: 1;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-group,
+            #app-container[data-screen="menu-screen"] .stepper-field {
+                gap: 3px;
+            }
+
+            #app-container[data-screen="menu-screen"] .stepper-stack {
+                gap: 6px;
+            }
+
+            #app-container[data-screen="menu-screen"] label {
+                font-size: 0.76rem;
+                line-height: 1.05;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control {
+                grid-template-columns: 48px minmax(0, 1fr) 48px;
+                min-height: 42px;
+                border-radius: 14px;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control input[type="number"] {
+                height: 42px;
+                font-size: 1.22rem;
+                padding: 0 5px;
+            }
+
+            #app-container[data-screen="menu-screen"] .step-btn {
+                min-height: 42px;
+                height: 42px;
+                font-size: 1.22rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider {
+                gap: 4px;
+                padding: 4px;
+                border-radius: 15px;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider label {
+                min-height: 50px;
+                border-radius: 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-symbol {
+                font-size: 1.35rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-text {
+                font-size: 0.62rem;
+            }
+
+            #app-container[data-screen="menu-screen"] select {
+                min-height: 42px;
+                height: 42px;
+                border-radius: 14px;
+                font-size: 0.76rem;
+                padding: 0 38px 0 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .level-wrap::after {
+                right: 14px;
+                font-size: 1rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-toggle {
+                min-height: 40px;
+                border-radius: 13px;
+                padding: 0 10px 0 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-box {
+                width: 26px;
+                height: 26px;
+                border-radius: 8px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-box svg {
+                width: 17px;
+                height: 17px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-start {
+                min-height: 44px;
+                height: 44px;
+                margin-top: 0;
+                border-radius: 15px;
+                font-size: 0.9rem;
+            }
+
+            /* ---------- Header saat bermain: tombol kiri, info kanan ---------- */
+            #app-container[data-screen="game-screen"] .header {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            #app-container[data-screen="game-screen"] .header-left {
+                order: 1;
+                justify-content: flex-start;
+                flex: 0 0 auto;
+            }
+
+            #app-container[data-screen="game-screen"] .header-right {
+                order: 2;
+                justify-content: flex-end;
+                flex: 1 1 auto;
+                gap: 5px;
+            }
+
+            #app-container[data-screen="game-screen"] .brand-mini {
+                gap: 5px;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-home,
+            #app-container[data-screen="game-screen"] .theme-toggle,
+            #app-container[data-screen="game-screen"] .btn-fullscreen {
+                width: 34px;
+                min-width: 34px;
+                height: 34px;
+                border-radius: 11px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer,
+            #app-container[data-screen="game-screen"] .lives-display {
+                height: 34px;
+                border-radius: 11px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer {
+                min-width: 52px;
+                padding: 0 7px;
+                font-size: 0.86rem;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display {
+                min-width: 46px;
+                padding: 0 6px;
+            }
+
+            /* ---------- Backspace: sebesar tombol lain dan tepat di tengah ---------- */
+            #app-container[data-screen="game-screen"] .btn-del {
+                display: grid;
+                place-items: center;
+                padding: 0;
+                line-height: 0;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-del .backspace-icon {
+                width: 42px;
+                height: 42px;
+                display: block;
+                margin: 0;
+                transform: none;
+                stroke-width: 2;
+            }
+        }
+
+        /* HP portrait sangat pendek: pemadatan tambahan agar Pengaturan tetap satu layar. */
+        @media (orientation: portrait) and (max-width: 600px) and (max-height: 720px) {
+            #app-container[data-screen="menu-screen"] .header {
+                min-height: 68px;
+                padding-top: 6px;
+                padding-bottom: 2px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-mini {
+                grid-template-columns: repeat(3, 34px) minmax(0, 1fr);
+                grid-template-rows: 34px 18px;
+                column-gap: 6px;
+                row-gap: 4px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-home,
+            #app-container[data-screen="menu-screen"] .theme-toggle,
+            #app-container[data-screen="menu-screen"] .btn-fullscreen {
+                width: 34px;
+                min-width: 34px;
+                height: 34px;
+                border-radius: 11px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-text {
+                font-size: 0.86rem;
+            }
+
+            #menu-screen {
+                gap: 4px;
+                padding-bottom: 6px;
+            }
+
+            #menu-screen h1 {
+                font-size: 1.12rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-card {
+                padding-top: 6px;
+                padding-bottom: 6px;
+                gap: 5px;
+            }
+
+            #app-container[data-screen="menu-screen"] .right-panel {
+                padding-top: 6px;
+                padding-bottom: 6px;
+            }
+
+            #app-container[data-screen="menu-screen"] .stepper-stack {
+                gap: 4px;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control,
+            #app-container[data-screen="menu-screen"] .counter-control input[type="number"],
+            #app-container[data-screen="menu-screen"] .step-btn {
+                min-height: 38px;
+                height: 38px;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control {
+                grid-template-columns: 44px minmax(0, 1fr) 44px;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider label {
+                min-height: 44px;
+            }
+
+            #app-container[data-screen="menu-screen"] select {
+                min-height: 38px;
+                height: 38px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-toggle {
+                min-height: 36px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-start {
+                min-height: 40px;
+                height: 40px;
+            }
+        }
+
     </style>
 </head>
 <body data-theme="light">
 
-<div id="app-container">
+<div id="app-container" data-screen="menu-screen">
     <div id="confettiLayer" class="confetti-layer"></div>
     <div class="header">
         <div class="header-left">
@@ -1921,6 +2767,8 @@
                 <span id="inputModeIcon"></span>
             </button>
             <div id="livesDisplay" class="lives-display" aria-label="Kesempatan tersisa">
+                <span id="portraitLifeCount" class="portrait-life-count" aria-hidden="true">3</span>
+                <svg class="portrait-life-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.55-8.3C.5 9.45 2.15 5.5 5.85 4.65c2.2-.5 4.3.45 5.55 2.1.2.25.4.55.6.85.2-.3.4-.6.6-.85 1.25-1.65 3.35-2.6 5.55-2.1 3.7.85 5.35 4.8 3.4 8.05C19.2 16.65 12 21 12 21Z"/></svg>
                 <span class="heart-slot" data-heart-index="0">
                     <svg class="life-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.55-8.3C.5 9.45 2.15 5.5 5.85 4.65c2.2-.5 4.3.45 5.55 2.1.2.25.4.55.6.85.2-.3.4-.6.6-.85 1.25-1.65 3.35-2.6 5.55-2.1 3.7.85 5.35 4.8 3.4 8.05C19.2 16.65 12 21 12 21Z"/></svg>
                 </span>
@@ -1932,7 +2780,7 @@
                 </span>
             </div>
             <div id="questionCounter" class="question-counter">1/20</div>
-            <div class="timer" id="timerDisplay">00:00</div>
+            <div class="timer" id="timerDisplay" style="display: none;">00:00</div>
         </div>
     </div>
 
@@ -2047,6 +2895,17 @@
                 <div id="user-input" class="answer-display"></div>
             </div>
 
+            <div class="portrait-input-switches" aria-label="Pilih cara menjawab">
+                <button id="portraitVoiceModeToggle" class="portrait-input-switch portrait-voice-toggle unavailable" onclick="toggleVoiceMode()" title="Suara hanya tersedia saat online" aria-label="Jawab dengan suara" disabled>
+                    <svg class="icon-line" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 10.5v.5a6.5 6.5 0 0 0 13 0v-.5"/><path d="M12 17.5V21"/><path d="M9 21h6"/></svg>
+                    <span>Suara</span>
+                </button>
+                <button id="portraitInputModeToggle" class="portrait-input-switch portrait-manual-toggle active" onclick="toggleInputMode()" title="Tulis dengan tangan" aria-label="Tulis dengan tangan">
+                    <span id="portraitInputModeIcon"></span>
+                    <span id="portraitInputModeText">Tulis</span>
+                </button>
+            </div>
+
             <div class="numpad">
                 <button class="btn-num num-key" onclick="inputNum(1)">1</button>
                 <button class="btn-num num-key" onclick="inputNum(2)">2</button>
@@ -2057,7 +2916,7 @@
                 <button class="btn-num num-key" onclick="inputNum(7)">7</button>
                 <button class="btn-num num-key" onclick="inputNum(8)">8</button>
                 <button class="btn-num num-key" onclick="inputNum(9)">9</button>
-                <button class="btn-num btn-del" onclick="deleteInput()">DEL</button>
+                <button class="btn-num btn-del" onclick="deleteInput()" title="Hapus satu angka" aria-label="Hapus satu angka"><svg class="icon-line backspace-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"/><path d="m12 9 6 6"/><path d="m18 9-6 6"/></svg></button>
                 <button class="btn-num num-key" onclick="inputNum(0)">0</button>
                 <button class="btn-num btn-ok" onclick="submitAnswer()">OK</button>
             </div>
@@ -2272,6 +3131,16 @@
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
+
+        // Revisi 29: penanda layar aktif dipakai hanya untuk tata letak portrait responsif.
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) appContainer.dataset.screen = screenId;
+
+        // Revisi 28: timer header disembunyikan hanya pada halaman pengaturan.
+        const timerDisplay = document.getElementById('timerDisplay');
+        if (timerDisplay) {
+            timerDisplay.style.display = screenId === 'menu-screen' ? 'none' : 'grid';
+        }
     }
 
     function formatTime(seconds) {
@@ -2479,13 +3348,17 @@
     }
 
     function updateVoiceAvailability() {
-        const toggle = document.getElementById('voiceModeToggle');
+        const toggles = [
+            document.getElementById('voiceModeToggle'),
+            document.getElementById('portraitVoiceModeToggle')
+        ].filter(Boolean);
         const SpeechRecognitionCtor = getSpeechRecognitionConstructor();
         voiceAvailable = Boolean(navigator.onLine && SpeechRecognitionCtor);
 
-        if (toggle) {
+        toggles.forEach(toggle => {
             toggle.disabled = !voiceAvailable;
             toggle.classList.toggle('unavailable', !voiceAvailable);
+            toggle.classList.toggle('active', voiceAvailable && inputMode === 'voice');
             toggle.setAttribute('aria-disabled', voiceAvailable ? 'false' : 'true');
 
             if (!navigator.onLine) {
@@ -2495,7 +3368,7 @@
             } else {
                 toggle.setAttribute('title', inputMode === 'voice' ? 'Mode Suara Aktif' : 'Jawab dengan Suara');
             }
-        }
+        });
 
         if (!voiceAvailable && inputMode === 'voice') {
             stopVoiceRecognition(true);
@@ -2650,7 +3523,11 @@
 
             voiceCandidateAnswer = String(best.value);
             voiceTranscript = best.transcript;
-            setVoicePanelState('result', `Terdengar: “${voiceTranscript}”`, voiceCandidateAnswer);
+
+            // Revisi 28: hasil suara langsung tampil di area jawaban utama.
+            currentAnswer = voiceCandidateAnswer.slice(0, 2);
+            updateInputDisplay();
+            setVoicePanelState('result', `Terdengar: “${voiceTranscript}”`);
         };
 
         recognition.onnomatch = () => {
@@ -2732,6 +3609,8 @@
 
     function retryVoiceRecognition() {
         if (!gameInProgress || inputLocked || inputMode !== 'voice') return;
+        currentAnswer = '';
+        updateInputDisplay();
         resetVoicePanel();
         startVoiceRecognition();
     }
@@ -2766,20 +3645,47 @@
     function updateInputModeToggle() {
         const icon = document.getElementById('inputModeIcon');
         const toggle = document.getElementById('inputModeToggle');
-        if (!icon || !toggle) return;
+        const portraitIcon = document.getElementById('portraitInputModeIcon');
+        const portraitToggle = document.getElementById('portraitInputModeToggle');
+        const portraitText = document.getElementById('portraitInputModeText');
+
+        let iconMarkup = inputModeIcons.pencil;
+        let label = 'Tulis dengan tangan';
+        let title = 'Tulis Tangan';
+        let portraitLabel = 'Tulis';
 
         if (inputMode === 'voice') {
             const returnToHandwriting = lastManualInputMode === 'handwriting';
-            icon.innerHTML = returnToHandwriting ? inputModeIcons.pencil : inputModeIcons.keyboard;
-            toggle.setAttribute('aria-label', returnToHandwriting ? 'Kembali ke tulisan tangan' : 'Kembali ke tombol angka');
-            toggle.setAttribute('title', returnToHandwriting ? 'Tulis Tangan' : 'Tombol Angka');
-            return;
+            iconMarkup = returnToHandwriting ? inputModeIcons.pencil : inputModeIcons.keyboard;
+            label = returnToHandwriting ? 'Kembali ke tulisan tangan' : 'Kembali ke tombol angka';
+            title = returnToHandwriting ? 'Tulis Tangan' : 'Tombol Angka';
+            portraitLabel = returnToHandwriting ? 'Tulis' : 'Keyboard';
+        } else {
+            const handwritingActive = inputMode === 'handwriting';
+            iconMarkup = handwritingActive ? inputModeIcons.keyboard : inputModeIcons.pencil;
+            label = handwritingActive ? 'Gunakan tombol angka' : 'Tulis dengan tangan';
+            title = handwritingActive ? 'Tombol Angka' : 'Tulis Tangan';
+            portraitLabel = handwritingActive ? 'Keyboard' : 'Tulis';
         }
 
-        const handwritingActive = inputMode === 'handwriting';
-        icon.innerHTML = handwritingActive ? inputModeIcons.keyboard : inputModeIcons.pencil;
-        toggle.setAttribute('aria-label', handwritingActive ? 'Gunakan tombol angka' : 'Tulis dengan tangan');
-        toggle.setAttribute('title', handwritingActive ? 'Tombol Angka' : 'Tulis Tangan');
+        if (icon) icon.innerHTML = iconMarkup;
+        if (toggle) {
+            toggle.setAttribute('aria-label', label);
+            toggle.setAttribute('title', title);
+        }
+
+        if (portraitIcon) portraitIcon.innerHTML = iconMarkup;
+        if (portraitText) portraitText.textContent = portraitLabel;
+        if (portraitToggle) {
+            portraitToggle.setAttribute('aria-label', label);
+            portraitToggle.setAttribute('title', title);
+            portraitToggle.classList.toggle('active', inputMode !== 'voice');
+        }
+
+        const portraitVoiceToggle = document.getElementById('portraitVoiceModeToggle');
+        if (portraitVoiceToggle) {
+            portraitVoiceToggle.classList.toggle('active', voiceAvailable && inputMode === 'voice');
+        }
     }
 
     function toggleInputMode() {
@@ -2914,6 +3820,25 @@
         handwritingContext.lineWidth = baseSize;
         handwritingContext.lineCap = 'round';
         handwritingContext.lineJoin = 'round';
+    }
+
+    function syncHandwritingInkToTheme() {
+        const canvas = document.getElementById('handwritingCanvas');
+        if (!canvas || !handwritingContext) return;
+
+        const inkColor = getComputedStyle(document.body).getPropertyValue('--text-color').trim() || '#0f172a';
+
+        // Revisi 28: coretan yang sudah ada ikut berubah saat tema diganti.
+        if (handwritingHasInk && canvas.width > 0 && canvas.height > 0) {
+            handwritingContext.save();
+            handwritingContext.setTransform(1, 0, 0, 1, 0, 0);
+            handwritingContext.globalCompositeOperation = 'source-in';
+            handwritingContext.fillStyle = inkColor;
+            handwritingContext.fillRect(0, 0, canvas.width, canvas.height);
+            handwritingContext.restore();
+        }
+
+        configureHandwritingBrush();
     }
 
     function resizeHandwritingCanvas(preserveInk = true) {
@@ -3363,6 +4288,7 @@
     function setTheme(theme) {
         const safeTheme = theme === 'dark' ? 'dark' : 'light';
         document.body.setAttribute('data-theme', safeTheme);
+        syncHandwritingInkToTheme();
         const themeIcon = document.getElementById('themeIcon');
         const themeToggle = document.getElementById('themeToggle');
 
@@ -3482,6 +4408,9 @@
         if (livesDisplay) {
             livesDisplay.setAttribute('aria-label', `${safeLives} dari 3 kesempatan tersisa`);
         }
+
+        const portraitLifeCount = document.getElementById('portraitLifeCount');
+        if (portraitLifeCount) portraitLifeCount.textContent = String(safeLives);
     }
 
     function playWrongFeedback(lostHeartIndex, remainingLives, onComplete) {
