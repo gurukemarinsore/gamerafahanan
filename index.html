@@ -1585,6 +1585,313 @@
             .btn-del,
             .btn-ok { font-size: 1.45rem; }
         }
+
+
+        /* Revisi 27: optimasi khusus HP landscape/fullscreen dengan layar pendek.
+           Dibuat spesifik untuk perangkat sentuh agar layout laptop dan tablet tetap seperti Revisi 26. */
+        @media (orientation: landscape) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
+            .header {
+                height: 46px;
+                padding: 6px 10px;
+            }
+
+            .btn-home,
+            .btn-fullscreen,
+            .theme-toggle,
+            .input-mode-toggle,
+            .voice-mode-toggle,
+            .question-counter,
+            .timer {
+                height: 34px;
+                border-radius: 12px;
+            }
+
+            .btn-home,
+            .btn-fullscreen,
+            .theme-toggle,
+            .input-mode-toggle,
+            .voice-mode-toggle {
+                width: 34px;
+                min-width: 34px;
+                padding: 0;
+            }
+
+            .header-left,
+            .header-right {
+                gap: 5px;
+            }
+
+            .question-counter,
+            .timer {
+                width: 78px;
+                min-width: 78px;
+                font-size: 0.92rem;
+            }
+
+            .lives-display {
+                height: 34px;
+                padding: 0 4px;
+                border-radius: 12px;
+            }
+
+            .heart-slot {
+                width: 17px;
+                height: 17px;
+            }
+
+            .life-heart {
+                width: 16px;
+                height: 16px;
+            }
+
+            .screen {
+                padding-bottom: 6px;
+            }
+
+            /* Menu pengaturan: dipadatkan vertikal hanya pada HP landscape. */
+            #menu-screen {
+                padding: 0 10px 6px;
+                gap: 5px;
+            }
+
+            .menu-hero {
+                padding: 0 2px;
+            }
+
+            #menu-screen h1 {
+                font-size: 1.35rem;
+                line-height: 1;
+            }
+
+            .settings-grid {
+                gap: 8px;
+            }
+
+            .setting-card {
+                border-radius: 18px;
+                padding: 7px 8px;
+                gap: 5px;
+            }
+
+            .card-title h2 {
+                font-size: 0.82rem;
+            }
+
+            .setting-group,
+            .stepper-field {
+                gap: 4px;
+            }
+
+            .stepper-stack {
+                gap: 4px;
+            }
+
+            label {
+                font-size: 0.78rem;
+            }
+
+            .counter-control {
+                min-height: 38px;
+                grid-template-columns: 44px minmax(0, 1fr) 44px;
+                border-radius: 14px;
+            }
+
+            .counter-control input[type="number"] {
+                height: 38px;
+                font-size: 1.2rem;
+            }
+
+            .step-btn {
+                min-height: 38px;
+                height: 38px;
+                font-size: 1.18rem;
+            }
+
+            .operation-slider {
+                gap: 4px;
+                padding: 4px;
+                border-radius: 16px;
+            }
+
+            .operation-slider label {
+                min-height: 43px;
+                border-radius: 12px;
+            }
+
+            .operation-symbol {
+                font-size: 1.35rem;
+            }
+
+            .operation-text {
+                font-size: 0.64rem;
+            }
+
+            select {
+                min-height: 39px;
+                border-radius: 14px;
+                font-size: 0.78rem;
+                padding: 0 42px 0 12px;
+            }
+
+            .chance-toggle {
+                min-height: 39px;
+                border-radius: 14px;
+                padding: 0 10px 0 12px;
+            }
+
+            .chance-box {
+                width: 26px;
+                height: 26px;
+                border-radius: 8px;
+            }
+
+            .chance-box svg {
+                width: 17px;
+                height: 17px;
+            }
+
+            .btn-start {
+                min-height: 40px;
+                border-radius: 14px;
+                font-size: 0.9rem;
+            }
+
+            /* Area bermain: beri sedikit ruang ekstra di tepi bawah tanpa mengubah struktur permainan. */
+            #game-screen {
+                padding: 0 10px 6px;
+            }
+
+            .game-layout {
+                gap: 10px;
+            }
+
+            .question-area {
+                padding: 10px;
+                border-radius: 22px;
+            }
+
+            .numpad {
+                gap: 7px;
+            }
+
+            .btn-num {
+                border-radius: 14px;
+            }
+
+            .handwriting-panel,
+            .voice-panel {
+                grid-template-rows: minmax(0, 1fr) 42px;
+                gap: 6px;
+            }
+
+            .handwriting-canvas-wrap,
+            .voice-stage {
+                border-radius: 16px;
+            }
+
+            .voice-stage {
+                gap: 9px;
+                padding: 10px;
+            }
+
+            .voice-wave {
+                height: 72px;
+                gap: 4px;
+            }
+
+            .voice-wave-bar {
+                width: 5px;
+            }
+
+            .voice-mic-main {
+                width: 48px;
+                min-width: 48px;
+                height: 48px;
+            }
+
+            .voice-mic-main .icon-line {
+                width: 22px;
+                height: 22px;
+            }
+
+            .btn-handwriting-clear,
+            .btn-handwriting-ok,
+            .btn-voice-retry,
+            .btn-voice-ok {
+                border-radius: 13px;
+                font-size: 0.84rem;
+            }
+
+            /* Halaman hasil: semua informasi dan tombol Main Lagi tetap masuk satu layar. */
+            #result-screen {
+                justify-content: flex-start;
+                padding-top: 4px;
+            }
+
+            #result-screen h2 {
+                margin: 0 0 3px;
+                font-size: 1.8rem;
+                line-height: 1;
+            }
+
+            .result-stats {
+                font-size: 0.95rem;
+                line-height: 1.2;
+            }
+
+            .score-big {
+                font-size: 3.6rem;
+                margin: 2px 0 4px;
+            }
+
+            .result-grid {
+                gap: 6px;
+                margin-top: 6px;
+            }
+
+            .result-card {
+                min-height: 62px;
+                border-radius: 14px;
+                padding: 6px;
+                gap: 3px;
+            }
+
+            .result-label {
+                font-size: 0.74rem;
+            }
+
+            .result-value {
+                font-size: 1.05rem;
+            }
+
+            .time-summary {
+                min-height: 62px;
+                margin-top: 6px;
+                border-radius: 14px;
+                padding: 0 8px;
+            }
+
+            .time-summary-item {
+                min-height: 46px;
+                gap: 3px;
+                padding: 0 5px;
+            }
+
+            .time-summary-label {
+                font-size: 0.74rem;
+            }
+
+            .time-summary-value {
+                font-size: 1.05rem;
+            }
+
+            .btn-restart {
+                margin-top: 7px;
+                padding: 9px 28px;
+                border-radius: 15px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body data-theme="light">
