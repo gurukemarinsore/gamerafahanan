@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Berhitung Rafa &amp; Hanan v30</title>
+    <title>Game Berhitung Rafa &amp; Hanan v31</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/Yxl2fhm.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900;1000&display=swap');
@@ -2735,6 +2735,521 @@
             #app-container[data-screen="menu-screen"] .btn-start {
                 min-height: 40px;
                 height: 40px;
+            }
+        }
+
+    
+
+        /* ========================================================
+           Revisi 31: pemadatan portrait, konsistensi header,
+           ikon backspace proporsional di semua tampilan,
+           dan tablet portrait mengikuti pola layout HP portrait.
+           ======================================================== */
+        .btn-del {
+            display: grid;
+            place-items: center;
+            padding: 0;
+            line-height: 0;
+        }
+
+        .btn-del .backspace-icon {
+            width: clamp(36px, 2.2vw + 22px, 42px);
+            height: clamp(36px, 2.2vw + 22px, 42px);
+            display: block;
+            margin: 0;
+            transform: none;
+            stroke-width: 2;
+        }
+
+        @media (orientation: portrait) and (max-width: 1024px) {
+            #menu-screen.active {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            #menu-screen h1 {
+                width: 100%;
+                text-align: left;
+            }
+
+            #app-container[data-screen="menu-screen"] .header {
+                justify-content: flex-start;
+                align-items: flex-start;
+            }
+
+            #app-container[data-screen="menu-screen"] .header-left {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            #app-container[data-screen="menu-screen"] .header-right {
+                display: none;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-mini {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, var(--portrait-top-size, 40px)) minmax(0, 1fr);
+                grid-template-rows: var(--portrait-top-size, 40px) auto;
+                justify-content: start;
+                justify-items: start;
+                align-items: center;
+                column-gap: 8px;
+                row-gap: 6px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-text {
+                display: block !important;
+                grid-column: 1 / -1;
+                grid-row: 2;
+                width: 100%;
+                text-align: left;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 1;
+            }
+
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                min-height: 0;
+            }
+
+            #app-container[data-screen="menu-screen"] .left-panel,
+            #app-container[data-screen="menu-screen"] .right-panel {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 0;
+                min-height: 0;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-start {
+                margin-top: auto;
+            }
+
+            #game-screen.active {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            #app-container[data-screen="game-screen"] .header {
+                justify-content: space-between;
+            }
+
+            #app-container[data-screen="game-screen"] .header-left {
+                order: 1;
+                justify-content: flex-start;
+                flex: 0 0 auto;
+                gap: 6px;
+                min-width: 0;
+            }
+
+            #app-container[data-screen="game-screen"] .header-right {
+                order: 2;
+                justify-content: flex-end;
+                flex: 1 1 auto;
+                gap: 6px;
+                min-width: 0;
+            }
+
+            #app-container[data-screen="game-screen"] .portrait-life-count,
+            #app-container[data-screen="game-screen"] .portrait-life-heart {
+                display: none !important;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display {
+                justify-content: center;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display .heart-slot {
+                display: grid;
+            }
+
+            #app-container[data-screen="game-screen"] .game-layout {
+                width: min(100%, 760px);
+                margin: 0 auto;
+                flex: 1 1 auto;
+                height: 100%;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #app-container[data-screen="game-screen"] .question-area {
+                flex: 0 0 clamp(220px, 31vh, 320px);
+                height: auto;
+                min-height: 0;
+            }
+
+            .portrait-input-switches {
+                flex: 0 0 auto;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad,
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                flex: 1 1 auto;
+                width: 100%;
+                height: auto;
+                min-height: 0;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad {
+                grid-auto-rows: 1fr;
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                grid-template-rows: minmax(0, 1fr) 56px;
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-canvas-wrap,
+            #app-container[data-screen="game-screen"] .voice-stage {
+                min-height: 0;
+                height: 100%;
+            }
+        }
+
+        @media (orientation: portrait) and (max-width: 600px) {
+            #app-container {
+                --portrait-top-size: 38px;
+            }
+
+            #app-container[data-screen="menu-screen"] .header,
+            #app-container[data-screen="game-screen"] .header {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-home,
+            #app-container[data-screen="menu-screen"] .theme-toggle,
+            #app-container[data-screen="menu-screen"] .btn-fullscreen,
+            #app-container[data-screen="game-screen"] .btn-home,
+            #app-container[data-screen="game-screen"] .theme-toggle,
+            #app-container[data-screen="game-screen"] .btn-fullscreen {
+                width: 38px;
+                min-width: 38px;
+                height: 38px;
+                border-radius: 13px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-text {
+                font-size: clamp(0.92rem, 4vw, 1rem);
+                letter-spacing: -0.025em;
+            }
+
+            #menu-screen {
+                gap: 6px;
+                padding: 0 10px 10px;
+            }
+
+            .menu-hero {
+                padding: 0 2px;
+            }
+
+            #menu-screen h1 {
+                font-size: clamp(1.18rem, 5.4vw, 1.38rem);
+                line-height: 1;
+                margin: 0;
+            }
+
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                border-radius: 18px;
+                width: 100%;
+                margin: 0;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-card {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            #app-container[data-screen="menu-screen"] .right-panel {
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
+
+            #app-container[data-screen="menu-screen"] .card-title h2 {
+                font-size: 0.9rem;
+                line-height: 1;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-group,
+            #app-container[data-screen="menu-screen"] .stepper-field {
+                gap: 3px;
+            }
+
+            #app-container[data-screen="menu-screen"] .stepper-stack {
+                gap: 7px;
+            }
+
+            #app-container[data-screen="menu-screen"] label {
+                font-size: 0.76rem;
+                line-height: 1.05;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control {
+                grid-template-columns: 48px minmax(0, 1fr) 48px;
+                min-height: 42px;
+                border-radius: 14px;
+            }
+
+            #app-container[data-screen="menu-screen"] .counter-control input[type="number"] {
+                height: 42px;
+                font-size: 1.22rem;
+                padding: 0 5px;
+            }
+
+            #app-container[data-screen="menu-screen"] .step-btn {
+                min-height: 42px;
+                height: 42px;
+                font-size: 1.22rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider {
+                gap: 4px;
+                padding: 4px;
+                border-radius: 15px;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-slider label {
+                min-height: 50px;
+                border-radius: 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-symbol {
+                font-size: 1.35rem;
+            }
+
+            #app-container[data-screen="menu-screen"] .operation-text {
+                font-size: 0.62rem;
+            }
+
+            #app-container[data-screen="menu-screen"] select {
+                min-height: 42px;
+                height: 42px;
+                border-radius: 14px;
+                font-size: 0.76rem;
+                padding: 0 38px 0 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-toggle {
+                min-height: 40px;
+                border-radius: 13px;
+                padding: 0 10px 0 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-box {
+                width: 26px;
+                height: 26px;
+                border-radius: 8px;
+            }
+
+            #app-container[data-screen="menu-screen"] .chance-box svg {
+                width: 17px;
+                height: 17px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-start {
+                min-height: 44px;
+                height: 44px;
+                border-radius: 15px;
+                font-size: 0.9rem;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer,
+            #app-container[data-screen="game-screen"] .lives-display {
+                height: 38px;
+                border-radius: 13px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer {
+                min-width: 58px;
+                padding: 0 8px;
+                font-size: 0.92rem;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display {
+                min-width: 74px;
+                padding: 0 8px;
+                gap: 3px;
+            }
+
+            #app-container[data-screen="game-screen"] .heart-slot {
+                width: 18px;
+                height: 18px;
+            }
+
+            #app-container[data-screen="game-screen"] .life-heart {
+                width: 17px;
+                height: 17px;
+            }
+
+            #game-screen {
+                padding: 0 10px 10px;
+            }
+
+            #app-container[data-screen="game-screen"] .game-layout {
+                gap: 8px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-area {
+                flex-basis: clamp(200px, 29vh, 280px);
+                padding: 13px;
+                border-radius: 22px;
+                row-gap: 7px;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad {
+                gap: 8px;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-num {
+                min-height: 0;
+                border-radius: 17px;
+                font-size: clamp(2.2rem, 10vw, 2.95rem);
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                gap: 8px;
+                grid-template-rows: minmax(0, 1fr) 54px;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-del .backspace-icon {
+                width: 42px;
+                height: 42px;
+            }
+        }
+
+        @media (orientation: portrait) and (min-width: 601px) and (max-width: 1024px) {
+            #app-container {
+                --portrait-top-size: 42px;
+            }
+
+            #app-container[data-screen="menu-screen"] .header,
+            #app-container[data-screen="game-screen"] .header {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-home,
+            #app-container[data-screen="menu-screen"] .theme-toggle,
+            #app-container[data-screen="menu-screen"] .btn-fullscreen,
+            #app-container[data-screen="game-screen"] .btn-home,
+            #app-container[data-screen="game-screen"] .theme-toggle,
+            #app-container[data-screen="game-screen"] .btn-fullscreen {
+                width: 42px;
+                min-width: 42px;
+                height: 42px;
+                border-radius: 14px;
+            }
+
+            #app-container[data-screen="menu-screen"] .brand-text {
+                font-size: 1.05rem;
+                letter-spacing: -0.02em;
+            }
+
+            #menu-screen {
+                gap: 8px;
+                padding: 0 18px 16px;
+            }
+
+            #app-container[data-screen="menu-screen"] .settings-grid {
+                width: min(92vw, 760px);
+                border-radius: 24px;
+            }
+
+            #app-container[data-screen="menu-screen"] .setting-card {
+                padding: 14px 16px;
+                gap: 10px;
+            }
+
+            #app-container[data-screen="menu-screen"] .right-panel {
+                padding-top: 12px;
+                padding-bottom: 12px;
+            }
+
+            #app-container[data-screen="menu-screen"] .btn-start {
+                min-height: 52px;
+                border-radius: 16px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer,
+            #app-container[data-screen="game-screen"] .lives-display {
+                height: 42px;
+                border-radius: 14px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-counter,
+            #app-container[data-screen="game-screen"] .timer {
+                min-width: 68px;
+                padding: 0 10px;
+                font-size: 0.98rem;
+            }
+
+            #app-container[data-screen="game-screen"] .lives-display {
+                min-width: 84px;
+                padding: 0 10px;
+                gap: 4px;
+            }
+
+            #app-container[data-screen="game-screen"] .heart-slot {
+                width: 20px;
+                height: 20px;
+            }
+
+            #app-container[data-screen="game-screen"] .life-heart {
+                width: 19px;
+                height: 19px;
+            }
+
+            #game-screen {
+                padding: 0 18px 16px;
+            }
+
+            #app-container[data-screen="game-screen"] .game-layout {
+                width: min(92vw, 760px);
+                gap: 12px;
+            }
+
+            #app-container[data-screen="game-screen"] .question-area {
+                flex-basis: clamp(250px, 30vh, 330px);
+                border-radius: 28px;
+                padding: 16px;
+            }
+
+            .portrait-input-switch {
+                min-height: 54px;
+                border-radius: 18px;
+                font-size: 1rem;
+            }
+
+            #app-container[data-screen="game-screen"] .numpad {
+                gap: 11px;
+            }
+
+            #app-container[data-screen="game-screen"] .btn-num {
+                min-height: 0;
+                border-radius: 20px;
+                font-size: clamp(2.45rem, 6vw, 3.15rem);
+            }
+
+            #app-container[data-screen="game-screen"] .handwriting-panel,
+            #app-container[data-screen="game-screen"] .voice-panel {
+                gap: 11px;
+                grid-template-rows: minmax(0, 1fr) 62px;
             }
         }
 
