@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Meteor Defender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles for Game Aesthetics */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0b0c10;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+            touch-action: none; /* Prevent double-tap zoom etc. */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #game-container {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            pointer-events: none; /* Let clicks pass through to canvas when not on UI elements */
+        }
+
+        #numpad-container {
+            pointer-events: auto; /* Enable interaction for the unified control card */
+            background: rgba(31, 40, 51, 0.92);
+            padding: 10px;
+            border-top: 2px solid #66fcf1;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: stretch;
+            gap: 9px;
+            z-index: 30;
+            width: 100%;
+        }
+
+        .side-action-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .side-control-btn {
+            min-height: 42px;
+            border: 2px solid #45a29e;
+            border-radius: 9px;
+            background: #0b0c10;
+            color: #66fcf1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.58rem;
+            transition: all 0.15s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .side-control-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .side-control-btn:hover {
+            background: #2b3947;
+        }
+
+        .side-control-btn:active {
+            transform: scale(0.96);
+            background: #45a29e;
+            color: #0b0c10;
+        }
+
+        .hud-top {
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.62rem;
+            color: #45a29e;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .hud-item {
+            min-height: 42px;
+            padding: 7px 6px;
+            border: 1px solid rgba(102, 252, 241, 0.5);
+            border-radius: 9px;
+            background: rgba(11, 12, 16, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            line-height: 1.2;
+        }
+
+        .hud-value {
+            color: #ffffff;
+            font-size: 0.72rem;
+        }
+
+        .hud-item.life-gain-pulse {
+            animation: lifeHudPulse 0.8s ease-out;
+        }
+
+        @keyframes lifeHudPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 72, 117, 0); }
+            35% { transform: scale(1.08); box-shadow: 0 0 22px rgba(255, 72, 117, 0.9); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 72, 117, 0); }
+        }
+
+        .life-bonus-effect {
+            position: fixed;
+            z-index: 120;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 10px rgba(255, 72, 117, 0.9));
+        }
+
+        .life-bonus-heart {
+            color: #ff4875;
+            font-size: 44px;
+            line-height: 1;
+        }
+
+        .life-bonus-text {
+            margin-top: 5px;
+            color: #ffffff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.62rem;
+            white-space: nowrap;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        /* Adjust for Landscape */
+        @media (orientation: landscape) {
+            #numpad-container {
+                position: absolute;
+                top: 50%;
+                right: 10px;
+                bottom: auto;
+                transform: translateY(-50%);
+                width: 270px;
+                height: auto;
+                max-height: calc(100vh - 20px);
+                border: 2px solid #66fcf1;
+                border-radius: 14px;
+                padding: 10px;
+                background: rgba(31, 40, 51, 0.88);
+                box-shadow: 0 0 18px rgba(0, 0, 0, 0.6);
+            }
+            #game-container {
+                /* Make room for the compact control card on the right */
+                width: calc(100% - 290px); 
+            }
+            canvas {
+                width: calc(100vw - 290px); /* Specific for landscape layout */
+            }
+        }
+        
+        /* Fallback if logic is tricky, force canvas to fill parent */
+        #game-container canvas {
+             width: 100%;
+             height: 100%;
+        }
+
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: minmax(44px, 50px);
+            gap: 8px;
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            align-self: center;
+        }
+
+        .numpad-btn {
+            background-color: #1f2833;
+            color: #c5c6c7;
+            border: 2px solid #45a29e;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .numpad-btn:active {
+            transform: scale(0.95);
+            background-color: #45a29e;
+            color: #1f2833;
+        }
+        
+        .numpad-btn.hover-effect:hover {
+             background-color: #2b3947;
+        }
+
+        .btn-action {
+            background-color: #0b0c10;
+            color: #66fcf1;
+        }
+        
+        .btn-ok {
+            background-color: #45a29e;
+            color: #0b0c10;
+            border-color: #66fcf1;
+        }
+        .btn-ok:active {
+            background-color: #66fcf1;
+        }
+
+        #screens {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(11, 12, 16, 0.9);
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .screen-content h1 {
+            font-family: 'Press Start 2P', cursive;
+            color: #66fcf1;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #000;
+            font-size: 2rem;
+            line-height: 1.5;
+        }
+        
+        .screen-content p {
+            color: #c5c6c7;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            max-width: 600px;
+        }
+
+        .play-btn {
+            background-color: #45a29e;
+            color: #0b0c10;
+            border: 4px solid #66fcf1;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        .play-btn:hover {
+            background-color: #66fcf1;
+            transform: scale(1.05);
+        }
+        
+        .play-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .level-selection {
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .level-selection label {
+            font-family: 'Press Start 2P', cursive;
+            color: #66fcf1;
+            font-size: 1rem;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        #start-screen {
+            width: min(860px, 94vw);
+            max-height: 94vh;
+            overflow-y: auto;
+            padding: 16px 18px;
+            box-sizing: border-box;
+        }
+
+        #start-screen h1 {
+            margin-bottom: 8px;
+            font-size: clamp(1.35rem, 3vw, 2rem);
+        }
+
+        #start-screen p {
+            margin: 0 auto 14px;
+            font-size: 1rem;
+        }
+
+        .settings-grid {
+            width: min(720px, 100%);
+            margin: 0 auto 16px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 20px;
+        }
+
+        .settings-grid .level-selection {
+            margin-bottom: 0;
+            gap: 8px;
+        }
+
+        .settings-grid .level-selection label {
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+
+        .operation-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+            width: 100%;
+            max-width: 330px;
+        }
+
+        .operation-options input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .operation-options label {
+            min-height: 40px;
+            padding: 0 8px;
+            border: 2px solid #45a29e;
+            border-radius: 8px;
+            background: #1f2833;
+            color: #c5c6c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-shadow: none;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .operation-options input:checked + label {
+            background: #45a29e;
+            color: #0b0c10;
+            border-color: #66fcf1;
+            box-shadow: 0 0 12px rgba(102, 252, 241, 0.35);
+        }
+
+        .target-stepper {
+            width: 100%;
+            max-width: 300px;
+            display: grid;
+            grid-template-columns: 48px 1fr 48px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .target-step-btn {
+            height: 40px;
+            border: 2px solid #45a29e;
+            border-radius: 8px;
+            background: #1f2833;
+            color: #66fcf1;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .target-step-btn:active {
+            transform: scale(0.95);
+            background: #45a29e;
+            color: #0b0c10;
+        }
+
+        .target-step-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .target-value {
+            height: 40px;
+            border: 2px solid #45a29e;
+            border-radius: 8px;
+            background: #0b0c10;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 640px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #start-screen {
+                padding-top: 20px;
+                padding-bottom: 20px;
+            }
+        }
+
+        .math-level-select {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 2px solid #45a29e;
+            background: #1f2833;
+            color: #c5c6c7;
+            font-size: 1rem;
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            max-width: 300px;
+            height: 15px;
+            border-radius: 10px;
+            background: #1f2833;
+            outline: none;
+            border: 2px solid #45a29e;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #66fcf1;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #66fcf1;
+            cursor: pointer;
+            border: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Star background style */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menu / Game Over Screens -->
+    <div id="screens">
+        <div id="start-screen" class="screen-content">
+            <h1>MATH METEOR<br>DEFENDER</h1>
+            <p>Pilih meteor, ketik jawaban dari soal hitungannya, lalu tekan OK untuk menembak!</p>
+
+            <div class="settings-grid">
+                <div class="level-selection">
+                    <label>OPERASI</label>
+                    <div class="operation-options">
+                        <input type="radio" id="operation-add" name="operation-mode" value="add" checked>
+                        <label for="operation-add">Tambah +</label>
+                        <input type="radio" id="operation-subtract" name="operation-mode" value="subtract">
+                        <label for="operation-subtract">Kurang −</label>
+                        <input type="radio" id="operation-mixed" name="operation-mode" value="mixed">
+                        <label for="operation-mixed">Campur ±</label>
+                    </div>
+                </div>
+
+                <div class="level-selection">
+                    <label for="math-level-select">LEVEL HITUNGAN</label>
+                    <select id="math-level-select" class="math-level-select">
+                        <option value="1">Level 1 (1-5 + 1-5)</option>
+                        <option value="2">Level 2 (1-5 + 5-10)</option>
+                        <option value="3">Level 3 (1-5 + 10-15)</option>
+                        <option value="4">Level 4 (1-5 + 15-20)</option>
+                        <option value="5">Level 5 (5-10 + 5-10)</option>
+                        <option value="6">Level 6 (5-10 + 10-15)</option>
+                        <option value="7">Level 7 (5-10 + 15-20)</option>
+                        <option value="8">Level 8 (1-10 + 20-90)</option>
+                    </select>
+                </div>
+
+                <div class="level-selection">
+                    <label for="level-slider">LEVEL KECEPATAN: <span id="level-display">5</span></label>
+                    <input type="range" id="level-slider" min="1" max="10" value="5" class="slider">
+                </div>
+
+                <div class="level-selection">
+                    <label for="density-slider">KEPADATAN METEOR: <span id="density-display">3</span></label>
+                    <input type="range" id="density-slider" min="1" max="10" value="3" class="slider">
+                </div>
+
+                <div class="level-selection">
+                    <label>SKOR TARGET</label>
+                    <div class="target-stepper">
+                        <button id="target-minus" class="target-step-btn" type="button" aria-label="Kurangi skor target">−</button>
+                        <div id="target-score-value" class="target-value">100</div>
+                        <button id="target-plus" class="target-step-btn" type="button" aria-label="Tambah skor target">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="start-btn" class="play-btn">MULAI</button>
+        </div>
+        <div id="game-over-screen" class="screen-content hidden">
+            <h1 style="color: #ff3b3b;">GAME OVER</h1>
+            <p id="final-score">Skor Akhir: 0</p>
+            <button id="restart-btn" class="play-btn">MAIN LAGI</button>
+        </div>
+        <div id="win-screen" class="screen-content hidden">
+            <h1 style="color: #66fcf1;">KAMU MENANG!</h1>
+            <p id="win-score">Skor Akhir: 0</p>
+            <button id="win-restart-btn" class="play-btn">MAIN LAGI</button>
+        </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div id="game-container">
+        <!-- Canvas for rendering game objects -->
+        <canvas id="gameCanvas"></canvas>
+        <div id="starfield" class="stars"></div>
+        
+        <!-- UI overlay kept for game-layer compatibility -->
+        <div id="ui-layer" class="hidden"></div>
+    </div>
+
+    <!-- Unified Right Control Card -->
+    <div id="numpad-container" class="hidden">
+        <div class="side-action-row">
+            <button id="home-btn" class="side-control-btn" type="button" aria-label="Kembali ke halaman utama">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-6h5v6"></path></svg>
+                <span>HOME</span>
+            </button>
+            <button id="fullscreen-btn" class="side-control-btn" type="button" aria-label="Layar penuh">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5"></path><path d="M16 3h5v5"></path><path d="M21 16v5h-5"></path><path d="M3 16v5h5"></path></svg>
+                <span>FULL</span>
+            </button>
+        </div>
+
+        <div class="hud-top">
+            <div class="hud-item">
+                <span>SKOR</span>
+                <span class="hud-value"><span id="score-display">0</span>/<span id="target-score-hud">100</span></span>
+            </div>
+            <div class="hud-item" id="lives-hud-item">
+                <span>NYAWA</span>
+                <span class="hud-value" id="lives-display">3</span>
+            </div>
+        </div>
+
+        <div class="numpad-grid">
+            <button class="numpad-btn hover-effect" data-val="1">1</button>
+            <button class="numpad-btn hover-effect" data-val="2">2</button>
+            <button class="numpad-btn hover-effect" data-val="3">3</button>
+            <button class="numpad-btn hover-effect" data-val="4">4</button>
+            <button class="numpad-btn hover-effect" data-val="5">5</button>
+            <button class="numpad-btn hover-effect" data-val="6">6</button>
+            <button class="numpad-btn hover-effect" data-val="7">7</button>
+            <button class="numpad-btn hover-effect" data-val="8">8</button>
+            <button class="numpad-btn hover-effect" data-val="9">9</button>
+            <button class="numpad-btn btn-action hover-effect" id="btn-del">DEL</button>
+            <button class="numpad-btn hover-effect" data-val="0">0</button>
+            <button class="numpad-btn btn-ok hover-effect" id="btn-ok">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('game-container');
+        
+        // UI Elements
+        const screens = document.getElementById('screens');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const winScreen = document.getElementById('win-screen');
+        const uiLayer = document.getElementById('ui-layer');
+        const numpadContainer = document.getElementById('numpad-container');
+        const scoreDisplay = document.getElementById('score-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const livesHudItem = document.getElementById('lives-hud-item');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const winScoreDisplay = document.getElementById('win-score');
+        const targetScoreHud = document.getElementById('target-score-hud');
+        
+        const mathLevelSelect = document.getElementById('math-level-select');
+        const levelSlider = document.getElementById('level-slider');
+        const levelDisplay = document.getElementById('level-display');
+        const densitySlider = document.getElementById('density-slider');
+        const densityDisplay = document.getElementById('density-display');
+        const targetScoreValue = document.getElementById('target-score-value');
+        
+        // Buttons
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const winRestartBtn = document.getElementById('win-restart-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const targetMinusBtn = document.getElementById('target-minus');
+        const targetPlusBtn = document.getElementById('target-plus');
+        const numBtns = document.querySelectorAll('.numpad-btn[data-val]');
+        const delBtn = document.getElementById('btn-del');
+        const okBtn = document.getElementById('btn-ok');
+
+        // Game State Variables
+        let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
+        let score = 0;
+        let lives = 3;
+        let alienKills = 0;
+        let targetScore = 100;
+        let selectedTargetScore = 100;
+        let pendingWin = false;
+        let animationId;
+        let lastTime = 0;
+        
+        // Entity Arrays
+        let meteors = [];
+        let lasers = [];
+        let explosions = [];
+        
+        // Current Input State
+        let currentInput = "";
+        let selectedMeteor = null;
+        
+        // Difficulty and Timing
+        let meteorSpawnTimer = 0;
+        let meteorSpawnInterval = 7000;
+        let maxMeteorsOnScreen = 3;
+        let baseMeteorSpeed = 15; // Jatuh lebih lambat di awal
+        let timeElapsed = 0;
+        let currentSpeedMultiplier = 0.5; // Default Level 5 (50%)
+        let currentMathLevel = 1;
+        let currentOperation = 'add';
+        let currentDensityLevel = 3;
+
+        const mathLevelConfigs = {
+            1: { add: [[1, 5], [1, 5]], subtract: [[1, 5], [1, 5]] },
+            2: { add: [[1, 5], [5, 10]], subtract: [[5, 10], [1, 5]] },
+            3: { add: [[1, 5], [10, 15]], subtract: [[10, 15], [1, 5]] },
+            4: { add: [[1, 5], [15, 20]], subtract: [[15, 20], [1, 5]] },
+            5: { add: [[5, 10], [5, 10]], subtract: [[5, 10], [5, 10]] },
+            6: { add: [[5, 10], [10, 15]], subtract: [[10, 15], [5, 10]] },
+            7: { add: [[5, 10], [15, 20]], subtract: [[15, 20], [5, 10]] },
+            8: { add: [[1, 10], [20, 90]], subtract: [[20, 90], [1, 10]] }
+        };
+
+        const densityConfigs = {
+            1: { interval: 9000, maxMeteors: 2 },
+            2: { interval: 8000, maxMeteors: 3 },
+            3: { interval: 7000, maxMeteors: 3 },
+            4: { interval: 6200, maxMeteors: 4 },
+            5: { interval: 5400, maxMeteors: 4 },
+            6: { interval: 4700, maxMeteors: 5 },
+            7: { interval: 4000, maxMeteors: 6 },
+            8: { interval: 3400, maxMeteors: 7 },
+            9: { interval: 2900, maxMeteors: 8 },
+            10: { interval: 2400, maxMeteors: 10 }
+        };
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function updateMathLevelLabels() {
+            const selectedOperation = document.querySelector('input[name="operation-mode"]:checked').value;
+            const symbol = selectedOperation === 'add' ? '+' : selectedOperation === 'subtract' ? '−' : '±';
+
+            Object.keys(mathLevelConfigs).forEach(level => {
+                const config = mathLevelConfigs[level];
+                const ranges = selectedOperation === 'subtract' ? config.subtract : config.add;
+                const option = mathLevelSelect.querySelector(`option[value="${level}"]`);
+                option.textContent = `Level ${level} (${ranges[0][0]}-${ranges[0][1]} ${symbol} ${ranges[1][0]}-${ranges[1][1]})`;
+            });
+        }
+
+        function updateTargetScoreControls() {
+            targetScoreValue.innerText = selectedTargetScore;
+            targetMinusBtn.disabled = selectedTargetScore <= 50;
+            targetPlusBtn.disabled = selectedTargetScore >= 500;
+        }
+
+        function changeTargetScore(delta) {
+            selectedTargetScore = Math.max(50, Math.min(500, selectedTargetScore + delta));
+            updateTargetScoreControls();
+        }
+
+        levelSlider.addEventListener('input', (e) => {
+            levelDisplay.innerText = e.target.value;
+        });
+
+        densitySlider.addEventListener('input', (e) => {
+            densityDisplay.innerText = e.target.value;
+        });
+
+        document.querySelectorAll('input[name="operation-mode"]').forEach(input => {
+            input.addEventListener('change', updateMathLevelLabels);
+        });
+
+        targetMinusBtn.addEventListener('click', () => changeTargetScore(-10));
+        targetPlusBtn.addEventListener('click', () => changeTargetScore(10));
+        updateMathLevelLabels();
+        updateTargetScoreControls();
+
+        // Image Assets
+        const imgShip = new Image(); imgShip.src = 'https://i.imgur.com/U5uln1w.png';
+        const imgAst1 = new Image(); imgAst1.src = 'https://i.imgur.com/30yh7Ty.png';
+        const imgAst2 = new Image(); imgAst2.src = 'https://i.imgur.com/q44zjGI.png';
+        const imgAst3 = new Image(); imgAst3.src = 'https://i.imgur.com/hvCLsWW.png';
+        const imgAlien = new Image(); imgAlien.src = 'https://i.imgur.com/pVvW8xB.png';
+        const imgLaser = new Image(); imgLaser.src = 'https://i.imgur.com/pNsF8Bt.png';
+        const astImages = [imgAst1, imgAst2, imgAst3];
+
+        // Assets (Drawings directly on canvas)
+        const ship = {
+            x: 0,
+            y: 0,
+            width: 70, // Disesuaikan dengan proporsi gambar
+            height: 70,
+            angle: 0 // Angle aiming at target
+        };
+
+        // Fungsi pembantu untuk menggambar dengan skala proporsional (object-fit: contain)
+        function drawImageContained(ctx, img, cx, cy, maxWidth, maxHeight) {
+            if (!img.complete || img.naturalWidth === 0) return; // Pastikan gambar sudah selesai di-load
+            
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+            const boxRatio = maxWidth / maxHeight;
+            
+            let drawW, drawH;
+            
+            if (imgRatio > boxRatio) {
+                // Gambar lebih lebar dari rasio kontainer (mentok di batas lebar)
+                drawW = maxWidth;
+                drawH = maxWidth / imgRatio;
+            } else {
+                // Gambar lebih tinggi dari rasio kontainer (mentok di batas tinggi)
+                drawH = maxHeight;
+                drawW = maxHeight * imgRatio;
+            }
+            
+            // Gambar diletakkan persis di tengah (cx, cy)
+            ctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+        }
+
+        // Handle resizing for Responsive Canvas
+        function resizeCanvas() {
+            // Get dimensions of the game container (accounting for numpad on side in landscape)
+            canvas.width = gameContainer.clientWidth;
+            canvas.height = gameContainer.clientHeight;
+            
+            // Re-center ship at the bottom
+            ship.x = canvas.width / 2;
+            ship.y = canvas.height - ship.height / 2 - 20; // 20px padding from bottom
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        // Initial resize
+        resizeCanvas();
+
+        // Numpad Input Listeners
+        numBtns.forEach(btn => {
+            // Use 'mousedown' and 'touchstart' for faster response than 'click'
+            const pressHandler = (e) => {
+                e.preventDefault(); // Prevent double firing on touch devices
+                if (gameState !== 'PLAYING' || pendingWin) return;
+                
+                const val = btn.getAttribute('data-val');
+                // Limit input length
+                if (currentInput.length < 3) {
+                    currentInput += val;
+                }
+            };
+            btn.addEventListener('mousedown', pressHandler);
+            btn.addEventListener('touchstart', pressHandler, {passive: false});
+        });
+
+        const delHandler = (e) => {
+            e.preventDefault();
+            if (gameState !== 'PLAYING' || pendingWin) return;
+            currentInput = currentInput.slice(0, -1);
+        };
+        delBtn.addEventListener('mousedown', delHandler);
+        delBtn.addEventListener('touchstart', delHandler, {passive: false});
+
+        const okHandler = (e) => {
+            e.preventDefault();
+            if (gameState !== 'PLAYING' || pendingWin) return;
+            checkAnswer();
+        };
+        okBtn.addEventListener('mousedown', okHandler);
+        okBtn.addEventListener('touchstart', okHandler, {passive: false});
+
+        // Meteor Selection Logic
+        function handleSelectInteraction(x, y) {
+            if (gameState !== 'PLAYING' || pendingWin) return;
+            
+            let clickedMeteor = null;
+            // Check collision with meteors in reverse order (topmost first)
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                const m = meteors[i];
+                // Simple circle collision check
+                const dist = Math.hypot(x - m.x, y - m.y);
+                if (dist <= m.radius * 1.5) { // Generous hitbox for touch
+                    clickedMeteor = m;
+                    break;
+                }
+            }
+            
+            if (clickedMeteor) {
+                selectedMeteor = clickedMeteor;
+                // Aim ship
+                const dx = selectedMeteor.x - ship.x;
+                const dy = selectedMeteor.y - ship.y;
+                ship.angle = Math.atan2(dy, dx) + Math.PI / 2; // +90deg to face top
+                
+                // Optional: Clear input when selecting new meteor? 
+                // Let's keep input if they misclicked, or clear it. Let's keep it.
+            }
+        }
+
+        // Canvas touch/click listener
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            handleSelectInteraction(x, y);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent scrolling while playing
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            handleSelectInteraction(x, y);
+        }, {passive: false});
+
+
+        class Meteor {
+            constructor() {
+                // Generate problem sesuai Level Hitungan 1-8 dan operasi dari Game Berhitung Rafa & Hanan
+                const config = mathLevelConfigs[currentMathLevel];
+                const operationForQuestion = currentOperation === 'mixed'
+                    ? (Math.random() > 0.5 ? 'add' : 'subtract')
+                    : currentOperation;
+                const ranges = currentOperation === 'mixed'
+                    ? config.subtract
+                    : (operationForQuestion === 'add' ? config.add : config.subtract);
+
+                let validProblem = false;
+                let attempts = 0;
+                while (!validProblem && attempts < 100) {
+                    attempts++;
+                    this.num1 = getRandomInt(ranges[0][0], ranges[0][1]);
+                    this.num2 = getRandomInt(ranges[1][0], ranges[1][1]);
+
+                    if (operationForQuestion === 'add' && currentOperation === 'add' && Math.random() > 0.5) {
+                        const temp = this.num1;
+                        this.num1 = this.num2;
+                        this.num2 = temp;
+                    }
+
+                    if (operationForQuestion === 'subtract' && this.num2 > this.num1) {
+                        const temp = this.num1;
+                        this.num1 = this.num2;
+                        this.num2 = temp;
+                    }
+
+                    this.operator = operationForQuestion === 'add' ? '+' : '−';
+                    this.answer = operationForQuestion === 'add'
+                        ? this.num1 + this.num2
+                        : this.num1 - this.num2;
+                    validProblem = this.answer <= 99;
+                }
+
+                this.problemString = `${this.num1} ${this.operator} ${this.num2}`;
+                
+                // Appearance
+                this.radius = 45; // Ukuran disesuaikan untuk gambar
+                this.isAlien = Math.random() < 0.2; // 20% peluang muncul Alien
+                this.image = this.isAlien ? imgAlien : astImages[Math.floor(Math.random() * astImages.length)];
+                
+                // Spawn position
+                this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+                this.y = -this.radius; // Start slightly above screen
+                
+                // Speed increases slightly over time
+                let speedMultiplier = 1 + (timeElapsed / 120000); // Bertambah cepat tiap 2 menit
+                
+                this.speed = (baseMeteorSpeed + Math.random() * 10) * speedMultiplier * currentSpeedMultiplier;
+                
+                // Visual variation
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 1.5; // rad/sec
+            }
+
+            update(dt) {
+                this.y += this.speed * dt;
+                this.rotation += this.rotSpeed * dt;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Highlight if selected
+                if (selectedMeteor === this) {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#66fcf1';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(102, 252, 241, 0.3)';
+                    ctx.fill();
+                }
+                
+                // Draw Image
+                if (!this.isAlien) {
+                    ctx.rotate(this.rotation); // Hanya asteroid yang berputar
+                }
+                
+                drawImageContained(ctx, this.image, 0, 0, this.radius * 2, this.radius * 2);
+                
+                if (!this.isAlien) {
+                    ctx.rotate(-this.rotation); // Kembalikan rotasi agar teks tegak
+                }
+                
+                // Draw Text Problem
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px Roboto';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Garis luar teks agar terbaca jelas di atas gambar terang
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = 'black';
+                ctx.strokeText(this.problemString, 0, 0);
+                
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = 'black';
+                ctx.fillText(this.problemString, 0, 0);
+                
+                ctx.restore();
+            }
+        }
+
+        class Laser {
+            constructor(startX, startY, targetMeteor, isDud) {
+                this.x = startX;
+                this.y = startY;
+                this.target = targetMeteor;
+                this.isDud = isDud; // Penanda jika laser salah jawaban
+                this.speed = 800; // pixels per sec (fast)
+                this.active = true;
+                
+                this.width = 15;
+                this.height = 45;
+                
+                this.scale = 1.0;
+                this.life = 0;
+                this.maxLife = 0.8; // Waktu maksimal laser dud bertahan (detik)
+                
+                // Calculate trajectory
+                const dx = this.target.x - this.x;
+                const dy = this.target.y - this.y;
+                const dist = Math.hypot(dx, dy);
+                this.vx = (dx / dist) * this.speed;
+                this.vy = (dy / dist) * this.speed;
+                
+                // Fixed angle pointing at target initially
+                this.angle = Math.atan2(dy, dx);
+            }
+            
+            update(dt) {
+                // Logika jika jawaban salah (Laser Dud)
+                if (this.isDud) {
+                    this.life += dt;
+                    this.scale = 1.0 - (this.life / this.maxLife);
+                    
+                    // Bergerak lambat ke target tapi tidak pernah sampai
+                    this.x += this.vx * dt * 0.4;
+                    this.y += this.vy * dt * 0.4;
+                    
+                    if (this.life >= this.maxLife || this.scale <= 0) {
+                        this.active = false;
+                    }
+                    return false;
+                }
+                
+                // Logika Laser Normal (Jawaban Benar)
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                
+                // Check if reached target (approximate hit detection based on distance)
+                if (this.target) {
+                   const dx = this.target.x - this.x;
+                   const dy = this.target.y - this.y;
+                   if (Math.hypot(dx, dy) < this.target.radius) {
+                       this.active = false;
+                       return true; // Hit target
+                   }
+                }
+                
+                // Remove if off screen
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.active = false;
+                }
+                return false;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                // Sesuaikan rotasi +90 derajat (Math.PI/2) agar gambar mengarah ke target
+                ctx.rotate(this.angle + Math.PI / 2); 
+                ctx.scale(this.scale, this.scale); // Scale untuk mengecilkan dud
+                
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#66fcf1';
+                
+                drawImageContained(ctx, imgLaser, 0, 0, this.width, this.height);
+                
+                ctx.restore();
+            }
+        }
+
+        class Explosion {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.particles = [];
+                for(let i=0; i<20; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 50 + Math.random() * 150;
+                    this.particles.push({
+                        x: 0,
+                        y: 0,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 1.0,
+                        color: Math.random() > 0.5 ? '#66fcf1' : '#45a29e'
+                    });
+                }
+                this.active = true;
+            }
+            
+            update(dt) {
+                let aliveCount = 0;
+                this.particles.forEach(p => {
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.life -= dt * 2; // Die over 0.5 sec
+                    if (p.life > 0) aliveCount++;
+                });
+                if (aliveCount === 0) this.active = false;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                this.particles.forEach(p => {
+                    if (p.life > 0) {
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = p.life;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                ctx.restore();
+            }
+        }
+
+        function checkAnswer() {
+            if (!selectedMeteor) return;
+            if (currentInput === "") return;
+            
+            const numInput = parseInt(currentInput);
+            
+            // Determine origin point at top of ship based on angle
+            const tipRadius = ship.height / 2;
+            const tipX = ship.x + Math.sin(ship.angle) * tipRadius;
+            const tipY = ship.y - Math.cos(ship.angle) * tipRadius;
+            
+            if (numInput === selectedMeteor.answer) {
+                // Jawaban Benar! Tembak laser nyata. (isDud = false)
+                lasers.push(new Laser(tipX, tipY, selectedMeteor, false));
+                
+                // Add score immediately
+                score += 10;
+                scoreDisplay.innerText = score;
+                
+                selectedMeteor.isTargeted = true;
+                if (score >= targetScore) {
+                    pendingWin = true;
+                    selectedMeteor.isWinningTarget = true;
+                    // Beri waktu singkat agar tembakan terakhir tetap terlihat sebelum layar kemenangan.
+                    setTimeout(() => {
+                        if (pendingWin && gameState === 'PLAYING') winGame();
+                    }, 650);
+                }
+                selectedMeteor = null;
+                currentInput = ""; // Clear input on success
+                
+            } else {
+                // Jawaban Salah! Tembak laser palsu yang akan menghilang. (isDud = true)
+                lasers.push(new Laser(tipX, tipY, selectedMeteor, true));
+                
+                currentInput = ""; // Hapus input agar pemain bisa coba lagi
+            }
+        }
+
+        function showLifeBonusEffect(x, y) {
+            const canvasRect = canvas.getBoundingClientRect();
+            const livesRect = livesDisplay.getBoundingClientRect();
+            const startX = canvasRect.left + x;
+            const startY = canvasRect.top + y;
+            const endX = livesRect.left + livesRect.width / 2;
+            const endY = livesRect.top + livesRect.height / 2;
+
+            const effect = document.createElement('div');
+            effect.className = 'life-bonus-effect';
+            effect.style.left = `${startX}px`;
+            effect.style.top = `${startY}px`;
+            effect.innerHTML = '<div class="life-bonus-heart">♥</div><div class="life-bonus-text">+1 NYAWA</div>';
+            document.body.appendChild(effect);
+
+            const moveX = endX - startX;
+            const moveY = endY - startY;
+            const animation = effect.animate([
+                { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 0 },
+                { transform: 'translate(-50%, -65%) scale(1.2)', opacity: 1, offset: 0.25 },
+                { transform: `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px)) scale(0.7)`, opacity: 1 }
+            ], {
+                duration: 950,
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                fill: 'forwards'
+            });
+
+            animation.onfinish = () => effect.remove();
+        }
+
+        function awardAlienLifeBonus(target) {
+            alienKills++;
+            if (alienKills % 3 !== 0) return;
+
+            lives++;
+            livesDisplay.innerText = lives;
+            showLifeBonusEffect(target.x, target.y);
+
+            livesHudItem.classList.remove('life-gain-pulse');
+            void livesHudItem.offsetWidth;
+            livesHudItem.classList.add('life-gain-pulse');
+        }
+
+        function drawShip(ctx) {
+            ctx.save();
+            ctx.translate(ship.x, ship.y);
+            
+            // Draw Ship Body
+            ctx.rotate(ship.angle);
+            
+            drawImageContained(ctx, imgShip, 0, 0, ship.width, ship.height);
+            
+            ctx.restore();
+            
+            // Draw Input Number on ship (after restore so it stays upright)
+            ctx.save();
+            ctx.translate(ship.x, ship.y + 35); // Posisi box input di bawah pesawat
+            ctx.fillStyle = '#1f2833'; // background rect
+            ctx.fillRect(-30, -15, 60, 30);
+            
+            ctx.strokeStyle = '#66fcf1';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-30, -15, 60, 30);
+            
+            ctx.fillStyle = '#66fcf1';
+            ctx.font = 'bold 20px Roboto';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Blinking cursor effect if empty
+            let displayText = currentInput;
+            if (displayText === "" && Math.floor(Date.now() / 500) % 2 === 0) {
+                displayText = "_";
+            }
+            ctx.fillText(displayText, 0, 0);
+            ctx.restore();
+        }
+
+        function drawBackground() {
+            // Simple starry background
+            ctx.fillStyle = '#0b0c10';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw some stars (static for performance)
+            // Ideally we'd have a starfield object, let's just do static dots for now
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            // We use a fixed seed concept or just draw a few every frame based on position
+            // A better way is an offscreen canvas or CSS. Since we added a CSS starfield div, let's use that instead for pure static stars.
+            // Wait, CSS starfield is empty. Let's populate it via JS once.
+        }
+
+        // Initialize CSS Stars
+        function initStars() {
+            const starfield = document.getElementById('starfield');
+            starfield.innerHTML = ''; // clear
+            for (let i = 0; i < 100; i++) {
+                let star = document.createElement('div');
+                star.style.position = 'absolute';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                let size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.backgroundColor = 'white';
+                star.style.borderRadius = '50%';
+                star.style.opacity = Math.random();
+                starfield.appendChild(star);
+            }
+        }
+        initStars();
+
+        function update(dt) {
+            timeElapsed += dt * 1000;
+            meteorSpawnTimer += dt * 1000;
+
+            // Spawn meteors sesuai Level Kepadatan yang dipilih.
+            // Kepadatan hanya mengatur frekuensi/jumlah meteor, bukan kecepatan jatuh.
+            if (meteorSpawnTimer >= meteorSpawnInterval) {
+                if (meteors.length < maxMeteorsOnScreen) {
+                    meteors.push(new Meteor());
+                }
+                meteorSpawnTimer = 0;
+            }
+
+            // Update entities
+            meteors.forEach(m => m.update(dt));
+            
+            lasers.forEach(l => {
+                let hit = l.update(dt);
+                if (hit && l.target) {
+                    // Create explosion
+                    explosions.push(new Explosion(l.target.x, l.target.y));
+
+                    // Bonus 1 nyawa setiap berhasil menghancurkan alien ke-3, ke-6, ke-9, dst.
+                    if (l.target.isAlien && !l.target.alienKillCounted) {
+                        l.target.alienKillCounted = true;
+                        awardAlienLifeBonus(l.target);
+                    }
+
+                    // Mark meteor for removal
+                    l.target.dead = true;
+
+                    // Target skor tercapai: kemenangan dipastikan setelah tembakan mengenai target.
+                    if (l.target.isWinningTarget) {
+                        winGame();
+                    }
+                    // Note: Score added in checkAnswer() to feel instant, not on hit
+                }
+            });
+
+            if (gameState !== 'PLAYING') return;
+            
+            explosions.forEach(e => e.update(dt));
+
+            // Collision and Cleanup
+            // Remove dead lasers
+            lasers = lasers.filter(l => l.active);
+            
+            // Remove dead explosions
+            explosions = explosions.filter(e => e.active);
+
+            // Check Meteor collisions with ground/ship
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                let m = meteors[i];
+                
+                // If hit by laser
+                if (m.dead) {
+                    meteors.splice(i, 1);
+                    if (selectedMeteor === m) selectedMeteor = null;
+                    continue;
+                }
+
+                // Check collision with ship or bottom of screen
+                // Consider the 'play area' ends slightly above the ship
+                if (m.y + m.radius >= ship.y - ship.height/2) {
+                    // Impact!
+                    explosions.push(new Explosion(m.x, m.y));
+                    meteors.splice(i, 1);
+                    if (selectedMeteor === m) selectedMeteor = null;
+                    
+                    lives--;
+                    livesDisplay.innerText = lives;
+                    
+                    // Shake screen effect?
+                    
+                    if (lives <= 0 && gameState === 'PLAYING') {
+                        if (pendingWin) {
+                            winGame();
+                        } else {
+                            endGame();
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Ensure ship angle points towards selected meteor if moving
+            if (selectedMeteor && !selectedMeteor.isTargeted) {
+                const dx = selectedMeteor.x - ship.x;
+                const dy = selectedMeteor.y - ship.y;
+                ship.angle = Math.atan2(dy, dx) + Math.PI / 2;
+            } else if (!selectedMeteor) {
+                // Slowly return to center pointing up
+                let targetAngle = 0;
+                // Simple lerp to 0
+                ship.angle += (targetAngle - ship.angle) * 0.1;
+            }
+        }
+
+        function draw() {
+            // Clear canvas (actually we fill black in drawBackground)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Background handled by CSS mainly, but we can clear canvas
+            
+            meteors.forEach(m => m.draw(ctx));
+            lasers.forEach(l => l.draw(ctx));
+            explosions.forEach(e => e.draw(ctx));
+            drawShip(ctx);
+        }
+
+        function gameLoop(timestamp) {
+            if (gameState !== 'PLAYING') return;
+
+            let dt = (timestamp - lastTime) / 1000;
+            // Cap dt to prevent huge jumps if tab is inactive
+            if (dt > 0.1) dt = 0.1; 
+            lastTime = timestamp;
+
+            update(dt);
+            draw();
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            // Apply selected settings
+            currentMathLevel = parseInt(mathLevelSelect.value);
+            currentOperation = document.querySelector('input[name="operation-mode"]:checked').value;
+            const level = parseInt(levelSlider.value);
+            currentSpeedMultiplier = level / 10; // Mengubah 1-10 menjadi 0.1 - 1.0 (10% - 100%)
+            currentDensityLevel = parseInt(densitySlider.value);
+            const densityConfig = densityConfigs[currentDensityLevel];
+            meteorSpawnInterval = densityConfig.interval;
+            maxMeteorsOnScreen = densityConfig.maxMeteors;
+            targetScore = selectedTargetScore;
+
+            // Reset Stats
+            pendingWin = false;
+            score = 0;
+            lives = 3;
+            alienKills = 0;
+            timeElapsed = 0;
+            meteorSpawnTimer = meteorSpawnInterval; // spawn one immediately
+            scoreDisplay.innerText = score;
+            livesDisplay.innerText = lives;
+            targetScoreHud.innerText = targetScore;
+            
+            // Reset Entities
+            meteors = [];
+            lasers = [];
+            explosions = [];
+            currentInput = "";
+            selectedMeteor = null;
+            ship.angle = 0;
+            
+            // UI changes
+            screens.classList.add('hidden');
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+            uiLayer.classList.remove('hidden');
+            numpadContainer.classList.remove('hidden');
+            
+            // Layout fix
+            resizeCanvas();
+
+            gameState = 'PLAYING';
+            lastTime = performance.now();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            if (gameState !== 'PLAYING') return;
+            gameState = 'GAMEOVER';
+            pendingWin = false;
+            cancelAnimationFrame(animationId);
+            
+            // Show Game Over UI
+            uiLayer.classList.add('hidden');
+            numpadContainer.classList.add('hidden');
+            screens.classList.remove('hidden');
+            startScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            
+            finalScoreDisplay.innerText = `Skor Akhir: ${score}`;
+        }
+
+        function winGame() {
+            if (gameState !== 'PLAYING') return;
+            gameState = 'WIN';
+            pendingWin = false;
+            cancelAnimationFrame(animationId);
+
+            uiLayer.classList.add('hidden');
+            numpadContainer.classList.add('hidden');
+            screens.classList.remove('hidden');
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            winScreen.classList.remove('hidden');
+
+            winScoreDisplay.innerText = `Skor Akhir: ${score} — Target ${targetScore} tercapai!`;
+        }
+
+        function goHome() {
+            if (animationId) cancelAnimationFrame(animationId);
+            gameState = 'START';
+            pendingWin = false;
+            meteors = [];
+            lasers = [];
+            explosions = [];
+            currentInput = "";
+            selectedMeteor = null;
+
+            uiLayer.classList.add('hidden');
+            numpadContainer.classList.add('hidden');
+            screens.classList.remove('hidden');
+            gameOverScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            resizeCanvas();
+        }
+
+        async function toggleFullscreen() {
+            try {
+                if (!document.fullscreenElement) {
+                    await document.documentElement.requestFullscreen();
+                } else {
+                    await document.exitFullscreen();
+                }
+            } catch (error) {
+                // Fullscreen can be blocked by browser/device policy; game remains usable.
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            fullscreenBtn.setAttribute('aria-label', document.fullscreenElement ? 'Keluar layar penuh' : 'Layar penuh');
+            setTimeout(resizeCanvas, 50);
+        });
+
+        // Event Listeners for Start/Restart and right-card controls
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        winRestartBtn.addEventListener('click', startGame);
+        homeBtn.addEventListener('click', goHome);
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    </script>
+</body>
+</html>
