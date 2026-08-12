@@ -326,6 +326,43 @@
             opacity: .28;
         }
 
+
+        /* --- GAME PREVIEW SLIDESHOW --- */
+        .game-slideshow {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            background: #0b1220;
+        }
+
+        .game-slide {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transform: scale(1.01);
+            transition:
+                opacity .75s cubic-bezier(.22, 1, .36, 1),
+                transform 4.8s cubic-bezier(.22, 1, .36, 1);
+            will-change: opacity, transform;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .game-slide.active {
+            opacity: 1;
+            transform: scale(1.045);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .game-slide {
+                transition: opacity .2s linear;
+                transform: none !important;
+            }
+        }
+
         /* Future Section & Footer */
         .future {
             margin-top: 48px; padding: 24px; border-radius: var(--radius-md);
@@ -401,7 +438,7 @@
                 <!-- Loader Indicator -->
                 <div id="loading-indicator" class="absolute inset-0 transition-opacity duration-700 ease-premium opacity-100">
                     <div class="loader-ring"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-xs tracking-[0.2em] text-white/50 animate-pulse font-light">
+                    <div id="loading-label" class="absolute inset-0 flex items-center justify-center text-xs tracking-[0.2em] text-white/50 animate-pulse font-light">
                         MEMUAT
                     </div>
                 </div>
@@ -469,29 +506,12 @@
                     <!-- Card 1: Math -->
                     <a class="game-card math" href="game-berhitung.html">
                         <div class="game-visual">
-                            <span class="visual-glow" aria-hidden="true"></span>
-                            <svg class="visual-art" viewBox="0 0 360 230" fill="none" aria-hidden="true">
-                              <defs>
-                                <linearGradient id="mathCard" x1="62" y1="30" x2="290" y2="205" gradientUnits="userSpaceOnUse">
-                                  <stop stop-color="#FFFFFF"/>
-                                  <stop offset="1" stop-color="#EAF8FF"/>
-                                </linearGradient>
-                              </defs>
-                              <rect x="62" y="38" width="236" height="154" rx="34" fill="url(#mathCard)" stroke="rgba(255,255,255,.55)" stroke-width="3"/>
-                              <circle cx="116" cy="91" r="26" fill="#E5F7FF"/>
-                              <path d="M105 91h22M116 80v22" stroke="#2477FF" stroke-width="8" stroke-linecap="round"/>
-                              <circle cx="180" cy="91" r="26" fill="#FFF4D4"/>
-                              <path d="M169 91h22" stroke="#FF9C38" stroke-width="8" stroke-linecap="round"/>
-                              <circle cx="244" cy="91" r="26" fill="#E8FAFF"/>
-                              <path d="m235 82 18 18M253 82l-18 18" stroke="#2BC9E9" stroke-width="7" stroke-linecap="round"/>
-                              <rect x="91" y="137" width="178" height="30" rx="15" fill="#D9EFFF"/>
-                              <circle cx="119" cy="152" r="7" fill="#2477FF"/>
-                              <rect x="136" y="147" width="70" height="10" rx="5" fill="#78CFFF"/>
-                              <rect x="214" y="147" width="28" height="10" rx="5" fill="#FFD84D"/>
-                              <circle cx="79" cy="47" r="14" fill="#FFD84D"/>
-                              <path d="m78 37 2.6 6.4 6.9.6-5.3 4.5 1.6 6.7-5.8-3.6-5.9 3.6 1.6-6.7-5.3-4.5 6.9-.6L78 37Z" fill="#FF9C38"/>
-                              <circle cx="291" cy="184" r="13" fill="#42E8FF" opacity=".85"/>
-                            </svg>
+                            <div class="game-slideshow" aria-label="Preview slideshow">
+                                <img class="game-slide active" src="https://i.imgur.com/3TrTy48.png" alt="Game Berhitung - Halaman 1" loading="eager" decoding="async">
+                                <img class="game-slide" src="https://i.imgur.com/VMo9Scr.png" alt="Game Berhitung - Halaman 2" loading="eager" decoding="async">
+                                <img class="game-slide" src="https://i.imgur.com/0hoEpAc.png" alt="Game Berhitung - Halaman 3" loading="eager" decoding="async">
+                                <img class="game-slide" src="https://i.imgur.com/GTFlvV3.png" alt="Game Berhitung - Halaman 4" loading="eager" decoding="async">
+                            </div>
                         </div>
                         <div class="game-info">
                             <div>
@@ -510,37 +530,11 @@
                     <!-- Card 2: Meteor -->
                     <a class="game-card meteor" href="math-meteor-defender.html">
                         <div class="game-visual">
-                            <span class="visual-glow" aria-hidden="true"></span>
-                            <svg class="visual-art" viewBox="0 0 360 230" fill="none" aria-hidden="true">
-                              <defs>
-                                <linearGradient id="ship" x1="151" y1="121" x2="205" y2="198" gradientUnits="userSpaceOnUse">
-                                  <stop stop-color="#FFFFFF"/>
-                                  <stop offset="1" stop-color="#BDEFFF"/>
-                                </linearGradient>
-                                <linearGradient id="fire" x1="179" y1="180" x2="179" y2="216" gradientUnits="userSpaceOnUse">
-                                  <stop stop-color="#FFD84D"/>
-                                  <stop offset="1" stop-color="#FF793D"/>
-                                </linearGradient>
-                              </defs>
-                              <circle cx="65" cy="46" r="4" fill="#fff" opacity=".9"/>
-                              <circle cx="114" cy="70" r="3" fill="#42E8FF"/>
-                              <circle cx="286" cy="45" r="5" fill="#FFD84D"/>
-                              <circle cx="311" cy="118" r="3" fill="#fff" opacity=".85"/>
-                              <circle cx="46" cy="152" r="3" fill="#fff" opacity=".75"/>
-                              <path d="M266 56c15 4 28 15 36 29l-28 8-24-22 16-15Z" fill="#FF9C38"/>
-                              <circle cx="250" cy="70" r="28" fill="#FFB84F"/>
-                              <circle cx="240" cy="61" r="7" fill="#EA8A2E"/>
-                              <circle cx="260" cy="78" r="5" fill="#EA8A2E"/>
-                              <path d="M128 79c-12 5-21 16-25 29l22 2 18-20-15-11Z" fill="#6BE4FF" opacity=".95"/>
-                              <circle cx="146" cy="80" r="21" fill="#8BDFF7"/>
-                              <circle cx="139" cy="74" r="5" fill="#51B9DB"/>
-                              <path d="M180 116c24 18 35 42 31 71l-31 14-31-14c-4-29 7-53 31-71Z" fill="url(#ship)"/>
-                              <circle cx="180" cy="154" r="13" fill="#2477FF"/>
-                              <circle cx="180" cy="154" r="7" fill="#42E8FF"/>
-                              <path d="M150 171 128 188l27 1M210 171l22 17-27 1" fill="#73D7FF"/>
-                              <path d="M168 195h24l-12 26-12-26Z" fill="url(#fire)"/>
-                              <path d="M84 128h65M212 107h49" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".34"/>
-                            </svg>
+                            <div class="game-slideshow" aria-label="Preview slideshow">
+                                <img class="game-slide active" src="https://i.imgur.com/5yX6B1x.png" alt="Math Meteor Defender - Halaman 1" loading="eager" decoding="async">
+                                <img class="game-slide" src="https://i.imgur.com/51bJJwV.png" alt="Math Meteor Defender - Halaman 2" loading="eager" decoding="async">
+                                <img class="game-slide" src="https://i.imgur.com/G6iNt6D.png" alt="Math Meteor Defender - Halaman 3" loading="eager" decoding="async">
+                            </div>
                         </div>
                         <div class="game-info">
                             <div>
@@ -583,33 +577,89 @@
             // Lock scroll initially
             document.body.style.overflow = 'hidden';
 
-            const onImageLoaded = () => {
+            const loadingLabel = document.getElementById('loading-label');
+            const slideImages = Array.from(document.querySelectorAll('.game-slide'));
+
+            const waitForImage = (img) => new Promise((resolve, reject) => {
+                if (img.complete && img.naturalWidth > 0) {
+                    resolve(img);
+                    return;
+                }
+
+                const onLoad = () => {
+                    cleanup();
+                    resolve(img);
+                };
+
+                const onError = () => {
+                    cleanup();
+                    reject(new Error(`Gagal memuat gambar: ${img.src}`));
+                };
+
+                const cleanup = () => {
+                    img.removeEventListener('load', onLoad);
+                    img.removeEventListener('error', onError);
+                };
+
+                img.addEventListener('load', onLoad, { once: true });
+                img.addEventListener('error', onError, { once: true });
+            });
+
+            const revealSplashReadyState = () => {
                 loader.classList.remove('opacity-100');
                 loader.classList.add('opacity-0');
-                
+
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    
+
                     logo.classList.remove('opacity-0', 'scale-90');
                     logo.classList.add('opacity-100', 'scale-100');
 
                     welcomeText.classList.remove('opacity-0', '-translate-y-6');
                     welcomeText.classList.add('opacity-100', 'translate-y-0');
-                    
+
                     setTimeout(() => {
                         btnContainer.classList.remove('opacity-0', 'translate-y-8');
                         btnContainer.classList.add('opacity-100', 'translate-y-0');
                     }, 500);
-
                 }, 700);
             };
 
-            if (logo.complete && logo.naturalHeight !== 0) {
-                setTimeout(onImageLoaded, 800); // Slight delay for dramatic effect even if cached
-            } else {
-                logo.addEventListener('load', onImageLoaded);
-                logo.addEventListener('error', onImageLoaded); // Fallback
-            }
+            const preloadAllRequiredImages = async () => {
+                try {
+                    if (loadingLabel) loadingLabel.textContent = 'MEMUAT';
+
+                    await Promise.all([
+                        waitForImage(logo),
+                        ...slideImages.map(waitForImage)
+                    ]);
+
+                    revealSplashReadyState();
+                } catch (error) {
+                    console.error(error);
+                    if (loadingLabel) loadingLabel.textContent = 'MEMUAT ULANG';
+
+                    setTimeout(() => {
+                        slideImages.forEach((img) => {
+                            if (!(img.complete && img.naturalWidth > 0)) {
+                                const original = img.src;
+                                img.src = '';
+                                img.src = original;
+                            }
+                        });
+
+                        if (!(logo.complete && logo.naturalWidth > 0)) {
+                            const originalLogo = logo.src;
+                            logo.src = '';
+                            logo.src = originalLogo;
+                        }
+
+                        preloadAllRequiredImages();
+                    }, 2000);
+                }
+            };
+
+            preloadAllRequiredImages();
 
             // Transition from Splash to Main
             continueBtn.addEventListener('click', () => {
@@ -628,6 +678,31 @@
                 }, 1000); 
             });
 
+
+
+            /* --- GAME PREVIEW SLIDESHOW LOGIC --- */
+            const sliders = Array.from(document.querySelectorAll('.game-slideshow'));
+            const sliderTimers = [];
+
+            function startSlider(slider, delay = 3800) {
+                const slides = Array.from(slider.querySelectorAll('.game-slide'));
+                if (slides.length <= 1) return;
+
+                let index = 0;
+                const timer = setInterval(() => {
+                    if (document.hidden) return;
+
+                    slides[index].classList.remove('active');
+                    index = (index + 1) % slides.length;
+                    slides[index].classList.add('active');
+                }, delay);
+
+                sliderTimers.push(timer);
+            }
+
+            sliders.forEach((slider, i) => {
+                startSlider(slider, i === 0 ? 3900 : 4300);
+            });
 
             /* --- THEME TOGGLE LOGIC --- */
             const root = document.documentElement;
