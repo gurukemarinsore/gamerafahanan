@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Math Meteor Defender</title>
+    <link id="game-favicon" rel="icon" type="image/png" href="https://i.imgur.com/wTRhL4J.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -11,13 +12,19 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #0b0c10;
+            background:
+                radial-gradient(125% 92% at 50% 118%, rgba(14, 64, 112, 0.86) 0%, rgba(8, 38, 72, 0.72) 38%, rgba(2, 12, 27, 0.94) 70%, #000000 100%),
+                linear-gradient(180deg, #000000 0%, #020814 48%, #082745 100%);
             color: white;
             font-family: 'Roboto', sans-serif;
             touch-action: none; /* Prevent double-tap zoom etc. */
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: var(--app-height, 100dvh);
+            min-height: var(--app-height, 100dvh);
+            max-height: var(--app-height, 100dvh);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-sizing: border-box;
         }
 
         #game-container {
@@ -27,6 +34,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            background:
+                radial-gradient(130% 92% at 50% 120%, rgba(17, 73, 126, 0.9) 0%, rgba(7, 39, 76, 0.76) 40%, rgba(2, 11, 25, 0.95) 72%, #000000 100%),
+                linear-gradient(180deg, #000000 0%, #020814 46%, #082745 100%);
         }
 
         canvas {
@@ -52,7 +62,7 @@
         #numpad-container {
             pointer-events: auto; /* Enable interaction for the unified control card */
             background: rgba(31, 40, 51, 0.92);
-            padding: 10px;
+            padding: 10px 10px max(10px, env(safe-area-inset-bottom, 0px));
             border-top: 2px solid #66fcf1;
             box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
             display: flex;
@@ -66,7 +76,7 @@
 
         .side-action-row {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 8px;
         }
 
@@ -106,6 +116,17 @@
             transform: scale(0.96);
             background: #45a29e;
             color: #0b0c10;
+        }
+
+        .side-control-btn.sound-btn {
+            gap: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .side-control-btn.sound-btn svg {
+            width: 22px;
+            height: 22px;
         }
 
         .hud-top {
@@ -184,13 +205,23 @@
                 bottom: auto;
                 transform: translateY(-50%);
                 width: 270px;
-                height: auto;
-                max-height: calc(100vh - 20px);
+                height: min(390px, calc(var(--app-height, 100dvh) - 16px - env(safe-area-inset-bottom, 0px)));
+                max-height: calc(var(--app-height, 100dvh) - 16px - env(safe-area-inset-bottom, 0px));
                 border: 2px solid #66fcf1;
                 border-radius: 14px;
-                padding: 10px;
+                padding: 8px 8px max(8px, env(safe-area-inset-bottom, 0px));
                 background: rgba(31, 40, 51, 0.88);
                 box-shadow: 0 0 18px rgba(0, 0, 0, 0.6);
+                overflow: hidden;
+            }
+            #numpad-container .side-action-row,
+            #numpad-container .hud-top {
+                flex-shrink: 0;
+            }
+            #numpad-container .numpad-grid {
+                flex: 1 1 auto;
+                min-height: 0;
+                grid-auto-rows: minmax(0, 1fr);
             }
             #game-container {
                 /* Make room for the compact control card on the right */
@@ -210,8 +241,8 @@
         .numpad-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-auto-rows: minmax(44px, 50px);
-            gap: 8px;
+            grid-auto-rows: clamp(34px, 9dvh, 50px);
+            gap: clamp(5px, 1.5dvh, 8px);
             width: 100%;
             max-width: 300px;
             height: auto;
@@ -268,7 +299,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: rgba(11, 12, 16, 0.9);
+            background:
+                radial-gradient(125% 92% at 50% 118%, rgba(14, 64, 112, 0.86) 0%, rgba(8, 38, 72, 0.72) 38%, rgba(2, 12, 27, 0.96) 70%, #000000 100%),
+                linear-gradient(180deg, #000000 0%, #020814 48%, #082745 100%);
             flex-direction: column;
             text-align: center;
         }
@@ -500,6 +533,258 @@
             border: none;
         }
 
+        @media (orientation: landscape) and (max-height: 430px) {
+            #numpad-container {
+                gap: 5px;
+                width: 250px;
+            }
+
+            #game-container {
+                width: calc(100% - 270px);
+            }
+
+            .side-action-row,
+            .hud-top {
+                gap: 5px;
+            }
+
+            .side-control-btn,
+            .hud-item {
+                min-height: 34px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+            }
+
+            .side-control-btn {
+                font-size: 0.5rem;
+            }
+
+            .side-control-btn svg {
+                width: 15px;
+                height: 15px;
+            }
+
+            .hud-top {
+                font-size: 0.52rem;
+            }
+
+            .hud-value {
+                font-size: 0.62rem;
+            }
+
+            .numpad-btn {
+                font-size: 1.18rem;
+            }
+        }
+
+        /* Splash / preloader */
+        #splash-screen {
+            width: min(720px, 94vw);
+            min-height: min(560px, 92dvh);
+            padding: 18px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        .splash-title {
+            margin: 0 !important;
+            color: #66fcf1 !important;
+            font-size: clamp(0.8rem, 2.8vw, 1.35rem) !important;
+            line-height: 1.35 !important;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            text-shadow: 3px 3px 0 #000, 0 0 16px rgba(102, 252, 241, 0.22) !important;
+        }
+
+        .splash-logo-wrap {
+            width: min(470px, 82vw);
+            height: min(260px, 34dvh);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #splash-logo {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 18px rgba(102, 252, 241, 0.25));
+        }
+
+        .asset-progress-wrap {
+            width: min(420px, 82vw);
+            padding-top: 2px;
+            padding-bottom: 4px;
+        }
+
+        .asset-loading-label {
+            margin: 0 0 28px;
+            text-align: center;
+            color: #ffffff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(0.58rem, 1.8vw, 0.72rem);
+            line-height: 1.5;
+            letter-spacing: 0.12em;
+            text-shadow: 2px 2px 0 #000, 0 0 12px rgba(102, 252, 241, 0.18);
+            animation: assetLoadingColor 3.2s ease-in-out infinite;
+        }
+
+        @keyframes assetLoadingColor {
+            0%, 100% { color: #ffffff; text-shadow: 2px 2px 0 #000, 0 0 6px rgba(102, 252, 241, 0.08); }
+            50% { color: #66fcf1; text-shadow: 2px 2px 0 #000, 0 0 16px rgba(102, 252, 241, 0.42); }
+        }
+
+        .asset-progress-track {
+            position: relative;
+            height: 18px;
+            border: 2px solid #45a29e;
+            border-radius: 999px;
+            background: rgba(31, 40, 51, 0.95);
+            overflow: visible;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.45), 0 0 14px rgba(102,252,241,0.12);
+            margin: 0 24px 30px;
+        }
+
+        #asset-progress-fill {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #45a29e, #66fcf1);
+            transition: width 0.22s ease;
+        }
+
+        #loading-ship {
+            position: absolute;
+            left: 0%;
+            top: 50%;
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            transform: translate(-50%, -50%) rotate(90deg);
+            transform-origin: center;
+            transition: left 0.22s ease;
+            filter: drop-shadow(0 0 9px rgba(102, 252, 241, 0.85));
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .asset-progress-meta {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            color: #c5c6c7;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.58rem;
+            line-height: 1.5;
+        }
+
+        #asset-status {
+            min-height: 38px;
+            margin: 0;
+            max-width: 560px;
+            color: #c5c6c7;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        #asset-status.offline {
+            color: #ffd166;
+        }
+
+        #continue-btn {
+            margin-top: 2px;
+            padding: 12px 28px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-height: 520px) and (orientation: landscape) {
+            #splash-screen {
+                min-height: 0;
+                gap: 8px;
+            }
+
+            .splash-title {
+                font-size: 0.72rem !important;
+            }
+
+            .splash-logo-wrap {
+                height: 112px;
+            }
+
+            .asset-loading-label {
+                margin-bottom: 22px;
+                font-size: 0.52rem;
+            }
+
+            .asset-progress-track {
+                margin-bottom: 24px;
+            }
+
+            #asset-status {
+                min-height: 28px;
+                font-size: 0.78rem;
+            }
+        }
+
+        #game-toast-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-toast {
+            padding: 13px 18px;
+            border: 2px solid #66fcf1;
+            border-radius: 12px;
+            background: rgba(4, 17, 31, 0.9);
+            color: #ffffff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(0.56rem, 2vw, 0.78rem);
+            line-height: 1.6;
+            text-align: center;
+            text-shadow: 2px 2px 0 #000;
+            box-shadow: 0 0 24px rgba(102, 252, 241, 0.25);
+        }
+
+        .game-toast.rescue {
+            border-color: #ffd166;
+            color: #ffd166;
+            box-shadow: 0 0 26px rgba(255, 209, 102, 0.28);
+        }
+
+        #confetti-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            top: -24px;
+            width: 10px;
+            height: 18px;
+            border-radius: 2px;
+            animation: confettiFall linear forwards;
+        }
+
+        @keyframes confettiFall {
+            from { transform: translate3d(0, -8vh, 0) rotate(0deg); opacity: 1; }
+            to { transform: translate3d(var(--drift), 116vh, 0) rotate(var(--spin)); opacity: 0.9; }
+        }
+
         .hidden {
             display: none !important;
         }
@@ -520,7 +805,26 @@
 
     <!-- Menu / Game Over Screens -->
     <div id="screens">
-        <div id="start-screen" class="screen-content">
+        <div id="splash-screen" class="screen-content">
+            <h1 class="splash-title">MATH METEOR DEFENDER</h1>
+
+            <div class="splash-logo-wrap">
+                <img id="splash-logo" alt="Math Meteor Defender" draggable="false">
+            </div>
+
+            <div class="asset-progress-wrap">
+                <div class="asset-loading-label" aria-live="polite">MEMUAT ASET: <span id="asset-progress-text">0%</span></div>
+                <div class="asset-progress-track">
+                    <div id="asset-progress-fill"></div>
+                    <img id="loading-ship" alt="" aria-hidden="true" draggable="false">
+                </div>
+            </div>
+
+            <p id="asset-status">Menyiapkan pesawat, meteor, alien, dan laser...</p>
+            <button id="continue-btn" class="play-btn hidden" type="button">LANJUTKAN</button>
+        </div>
+
+        <div id="start-screen" class="screen-content hidden">
             <h1>MATH METEOR<br>DEFENDER</h1>
             <p>Pilih meteor, ketik jawaban dari soal hitungannya, lalu tekan OK untuk menembak!</p>
 
@@ -606,6 +910,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5"></path><path d="M16 3h5v5"></path><path d="M21 16v5h-5"></path><path d="M3 16v5h5"></path></svg>
                 <span>FULL</span>
             </button>
+            <button id="sound-btn" class="side-control-btn sound-btn" type="button" aria-label="Matikan suara"></button>
         </div>
 
         <div class="hud-top">
@@ -635,6 +940,9 @@
         </div>
     </div>
 
+    <div id="game-toast-layer" aria-hidden="true"></div>
+    <div id="confetti-layer" aria-hidden="true"></div>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -642,6 +950,14 @@
         
         // UI Elements
         const screens = document.getElementById('screens');
+        const splashScreen = document.getElementById('splash-screen');
+        const splashLogo = document.getElementById('splash-logo');
+        const loadingShip = document.getElementById('loading-ship');
+        const assetProgressFill = document.getElementById('asset-progress-fill');
+        const assetProgressText = document.getElementById('asset-progress-text');
+        const assetStatus = document.getElementById('asset-status');
+        const continueBtn = document.getElementById('continue-btn');
+        const faviconLink = document.getElementById('game-favicon');
         const startScreen = document.getElementById('start-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
         const winScreen = document.getElementById('win-screen');
@@ -667,6 +983,9 @@
         const winRestartBtn = document.getElementById('win-restart-btn');
         const homeBtn = document.getElementById('home-btn');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const soundBtn = document.getElementById('sound-btn');
+        const gameToastLayer = document.getElementById('game-toast-layer');
+        const confettiLayer = document.getElementById('confetti-layer');
         const targetMinusBtn = document.getElementById('target-minus');
         const targetPlusBtn = document.getElementById('target-plus');
         const numBtns = document.querySelectorAll('.numpad-btn[data-val]');
@@ -674,13 +993,14 @@
         const okBtn = document.getElementById('btn-ok');
 
         // Game State Variables
-        let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
+        let gameState = 'LOADING'; // LOADING, START, PLAYING, VICTORY_PENDING, VICTORY_CLEAR, GAMEOVER, WIN
         let score = 0;
         let lives = 3;
         let alienKills = 0;
         let targetScore = 100;
         let selectedTargetScore = 100;
         let pendingWin = false;
+        let victoryPendingTimer = 0;
         let animationId;
         let lastTime = 0;
         
@@ -688,6 +1008,7 @@
         let meteors = [];
         let lasers = [];
         let explosions = [];
+        let scorePopups = [];
         
         // Current Input State
         let currentInput = "";
@@ -772,14 +1093,387 @@
         updateMathLevelLabels();
         updateTargetScoreControls();
 
-        // Image Assets
-        const imgShip = new Image(); imgShip.src = 'https://i.imgur.com/U5uln1w.png';
-        const imgAst1 = new Image(); imgAst1.src = 'https://i.imgur.com/30yh7Ty.png';
-        const imgAst2 = new Image(); imgAst2.src = 'https://i.imgur.com/q44zjGI.png';
-        const imgAst3 = new Image(); imgAst3.src = 'https://i.imgur.com/hvCLsWW.png';
-        const imgAlien = new Image(); imgAlien.src = 'https://i.imgur.com/pVvW8xB.png';
-        const imgLaser = new Image(); imgLaser.src = 'https://i.imgur.com/pNsF8Bt.png';
+        // Audio arcade + seluruh efek suara dibuat dengan Web Audio API agar tetap tersedia offline.
+        let audioEnabled = true;
+        let audioCtx = null;
+        let masterGain = null;
+        let musicTimer = null;
+        let musicStep = 0;
+        const musicNotes = [220.00, 277.18, 329.63, 277.18, 196.00, 246.94, 293.66, 246.94];
+
+        function ensureAudio() {
+            if (!audioEnabled) return null;
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return null;
+
+            if (!audioCtx) {
+                audioCtx = new AudioContextClass();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 1;
+                masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+            return audioCtx;
+        }
+
+        function playTone(freq, duration = 0.1, type = 'square', volume = 0.04, endFreq = null, delay = 0) {
+            if (!audioEnabled) return;
+            const ac = ensureAudio();
+            if (!ac || !masterGain) return;
+            const start = ac.currentTime + delay;
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(Math.max(30, freq), start);
+            if (endFreq) osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), start + duration);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), start + 0.012);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(start);
+            osc.stop(start + duration + 0.03);
+        }
+
+        function playNoise(duration = 0.12, volume = 0.025) {
+            if (!audioEnabled) return;
+            const ac = ensureAudio();
+            if (!ac || !masterGain) return;
+            const length = Math.max(1, Math.floor(ac.sampleRate * duration));
+            const buffer = ac.createBuffer(1, length, ac.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+            const src = ac.createBufferSource();
+            const gain = ac.createGain();
+            src.buffer = buffer;
+            gain.gain.setValueAtTime(volume, ac.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + duration);
+            src.connect(gain);
+            gain.connect(masterGain);
+            src.start();
+        }
+
+        function playSfx(name) {
+            if (!audioEnabled) return;
+            switch (name) {
+                case 'shoot':
+                    playTone(720, 0.09, 'sawtooth', 0.035, 1080);
+                    break;
+                case 'wrong':
+                    playTone(210, 0.16, 'square', 0.035, 120);
+                    break;
+                case 'explosion':
+                    playNoise(0.16, 0.04);
+                    playTone(140, 0.18, 'sawtooth', 0.025, 55);
+                    break;
+                case 'alienExplosion':
+                    playNoise(0.13, 0.03);
+                    playTone(390, 0.18, 'triangle', 0.03, 120);
+                    break;
+                case 'lifeLost':
+                    playTone(180, 0.18, 'square', 0.035, 90);
+                    break;
+                case 'lifeBonus':
+                    playTone(523.25, 0.12, 'triangle', 0.035);
+                    playTone(659.25, 0.13, 'triangle', 0.035, null, 0.09);
+                    playTone(783.99, 0.16, 'triangle', 0.04, null, 0.18);
+                    break;
+                case 'rescue':
+                    playTone(392, 0.12, 'square', 0.035);
+                    playTone(523.25, 0.16, 'square', 0.035, null, 0.11);
+                    break;
+                case 'finalAttack':
+                    playTone(330, 0.22, 'sawtooth', 0.04, 880);
+                    playTone(440, 0.22, 'sawtooth', 0.035, 1100, 0.05);
+                    break;
+                case 'win':
+                    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => playTone(f, 0.25, 'triangle', 0.045, null, i * 0.13));
+                    break;
+                case 'lose':
+                    playTone(330, 0.24, 'sawtooth', 0.04, 180);
+                    playTone(180, 0.35, 'square', 0.035, 70, 0.18);
+                    break;
+            }
+        }
+
+        function musicTick() {
+            if (!audioEnabled || !['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) return;
+            const note = musicNotes[musicStep % musicNotes.length];
+            playTone(note, 0.13, 'square', 0.012);
+            if (musicStep % 4 === 0) playTone(note / 2, 0.18, 'triangle', 0.008);
+            musicStep++;
+        }
+
+        function startMusic() {
+            if (!audioEnabled || musicTimer) return;
+            ensureAudio();
+            musicStep = 0;
+            musicTick();
+            musicTimer = setInterval(musicTick, 260);
+        }
+
+        function stopMusic() {
+            if (musicTimer) clearInterval(musicTimer);
+            musicTimer = null;
+        }
+
+        function renderSoundIcon() {
+            if (!soundBtn) return;
+            soundBtn.setAttribute('aria-label', audioEnabled ? 'Matikan suara' : 'Nyalakan suara');
+            soundBtn.innerHTML = audioEnabled
+                ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"></path><path d="M16 9c1.4 1.4 1.4 4.6 0 6"></path><path d="M18.5 6.5c3 3 3 8 0 11"></path></svg>'
+                : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"></path><path d="m17 9 5 5"></path><path d="m22 9-5 5"></path></svg>';
+        }
+
+        function toggleSound() {
+            audioEnabled = !audioEnabled;
+            if (!audioEnabled) {
+                stopMusic();
+                if (masterGain && audioCtx) masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            } else {
+                ensureAudio();
+                if (masterGain && audioCtx) masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
+                if (['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) startMusic();
+            }
+            renderSoundIcon();
+        }
+
+        renderSoundIcon();
+
+        // Image Assets + SVG fallback bawaan agar game tetap bisa dimainkan offline
+        function svgToDataUri(svg) {
+            return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg.trim());
+        }
+
+        const fallbackAssets = {
+            ship: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+                    <defs>
+                        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e8ffff"/><stop offset="1" stop-color="#45a29e"/></linearGradient>
+                        <linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff59d"/><stop offset=".55" stop-color="#ff8a65"/><stop offset="1" stop-color="#ff3b3b" stop-opacity="0"/></linearGradient>
+                    </defs>
+                    <path d="M80 10C58 31 48 59 50 98l-25 25 35-7 20 30 20-30 35 7-25-25c2-39-8-67-30-88Z" fill="url(#g)" stroke="#66fcf1" stroke-width="6" stroke-linejoin="round"/>
+                    <circle cx="80" cy="62" r="16" fill="#0b0c10" stroke="#66fcf1" stroke-width="5"/>
+                    <path d="M68 120 80 154l12-34Z" fill="url(#f)"/>
+                </svg>`),
+            asteroid1: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+                    <defs><radialGradient id="a"><stop stop-color="#a78b72"/><stop offset="1" stop-color="#59493e"/></radialGradient></defs>
+                    <path d="M22 64 38 28 75 12l38 12 27 34-8 48-31 35-46 3-34-30Z" fill="url(#a)" stroke="#c5c6c7" stroke-width="5"/>
+                    <circle cx="58" cy="52" r="13" fill="#493b34"/><circle cx="103" cy="79" r="17" fill="#493b34"/><circle cx="61" cy="111" r="10" fill="#493b34"/>
+                </svg>`),
+            asteroid2: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+                    <defs><radialGradient id="a"><stop stop-color="#8d97a4"/><stop offset="1" stop-color="#434b55"/></radialGradient></defs>
+                    <path d="M17 82 28 42 58 17l45 4 32 26 10 42-23 41-43 15-40-16Z" fill="url(#a)" stroke="#b7c3cf" stroke-width="5"/>
+                    <ellipse cx="60" cy="57" rx="18" ry="12" fill="#343b43"/><circle cx="106" cy="103" r="14" fill="#343b43"/><circle cx="47" cy="111" r="9" fill="#343b43"/>
+                </svg>`),
+            asteroid3: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+                    <defs><radialGradient id="a"><stop stop-color="#b5906a"/><stop offset="1" stop-color="#67452f"/></radialGradient></defs>
+                    <path d="M16 70 40 29 83 14l39 20 24 39-13 45-40 28-46-10-30-30Z" fill="url(#a)" stroke="#d6b38c" stroke-width="5"/>
+                    <circle cx="52" cy="77" r="15" fill="#523725"/><ellipse cx="102" cy="51" rx="14" ry="10" fill="#523725"/><ellipse cx="100" cy="112" rx="19" ry="13" fill="#523725"/>
+                </svg>`),
+            alien: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+                    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b8ff8a"/><stop offset="1" stop-color="#45a29e"/></linearGradient></defs>
+                    <path d="M80 14c-38 0-58 30-54 69 4 42 28 63 54 63s50-21 54-63c4-39-16-69-54-69Z" fill="url(#g)" stroke="#66fcf1" stroke-width="5"/>
+                    <ellipse cx="56" cy="70" rx="15" ry="22" fill="#0b0c10" transform="rotate(-20 56 70)"/><ellipse cx="104" cy="70" rx="15" ry="22" fill="#0b0c10" transform="rotate(20 104 70)"/>
+                    <path d="M61 112q19 14 38 0" fill="none" stroke="#0b0c10" stroke-width="6" stroke-linecap="round"/>
+                </svg>`),
+            laser: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 192">
+                    <defs><linearGradient id="l" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".45" stop-color="#66fcf1"/><stop offset="1" stop-color="#45a29e" stop-opacity="0"/></linearGradient></defs>
+                    <path d="M32 4 51 53 41 169 32 188 23 169 13 53Z" fill="url(#l)" stroke="#66fcf1" stroke-width="4"/>
+                </svg>`),
+            splash: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360">
+                    <defs>
+                        <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eaffff"/><stop offset="1" stop-color="#9fb0bb"/></linearGradient>
+                        <linearGradient id="flame" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ffcf4d"/><stop offset=".5" stop-color="#ff6b3d"/><stop offset="1" stop-color="#ff334f"/></linearGradient>
+                    </defs>
+                    <rect width="760" height="360" rx="36" fill="#0b0c10"/>
+                    <g fill="#ffffff" opacity=".8"><circle cx="86" cy="64" r="4"/><circle cx="672" cy="74" r="3"/><circle cx="116" cy="278" r="3"/><circle cx="640" cy="292" r="4"/><circle cx="214" cy="58" r="2"/><circle cx="564" cy="55" r="2"/></g>
+                    <g transform="translate(170 60)">
+                        <path d="M65 165C20 149 0 130 0 112c31 3 54 1 79-10Z" fill="url(#flame)"/>
+                        <path d="M95 82C150 23 280 10 394 63c-51 72-168 125-302 116-19-28-19-64 3-97Z" fill="url(#body)" stroke="#66fcf1" stroke-width="7" stroke-linejoin="round"/>
+                        <path d="M340 45c42 1 70 10 95 25-15 32-35 58-64 79-4-42-14-75-31-104Z" fill="#ef3340" stroke="#66fcf1" stroke-width="6"/>
+                        <ellipse cx="208" cy="78" rx="58" ry="55" fill="#2d1741" stroke="#ffffff" stroke-width="8"/>
+                        <path d="M165 117c-15 14-24 35-26 62M258 111c20 9 34 24 45 43" fill="none" stroke="#66fcf1" stroke-width="8" stroke-linecap="round"/>
+                        <circle cx="187" cy="65" r="7" fill="#ffffff" opacity=".8"/>
+                    </g>
+                </svg>`),
+            favicon: svgToDataUri(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0b0c10"/><path d="M32 7 43 29 39 49 32 59 25 49 21 29Z" fill="#45a29e" stroke="#66fcf1" stroke-width="3"/><circle cx="32" cy="29" r="6" fill="#0b0c10"/></svg>`)
+        };
+
+        const assetUrls = {
+            ship: 'https://i.imgur.com/2eXRJAn.png',
+            asteroid1: 'https://i.imgur.com/30yh7Ty.png',
+            asteroid2: 'https://i.imgur.com/q44zjGI.png',
+            asteroid3: 'https://i.imgur.com/hvCLsWW.png',
+            alien: 'https://i.imgur.com/pVvW8xB.png',
+            laser: 'https://i.imgur.com/pNsF8Bt.png',
+            splash: 'https://i.imgur.com/9yHJjn7.png',
+            favicon: 'https://i.imgur.com/wTRhL4J.png'
+        };
+
+        const imgShip = new Image();
+        const imgAst1 = new Image();
+        const imgAst2 = new Image();
+        const imgAst3 = new Image();
+        const imgAlien = new Image();
+        const imgLaser = new Image();
+        const imgSplashPreload = new Image();
+        const imgFaviconPreload = new Image();
         const astImages = [imgAst1, imgAst2, imgAst3];
+
+        const preloadEntries = [
+            { key: 'ship', label: 'Pesawat', image: imgShip, fallback: fallbackAssets.ship },
+            { key: 'asteroid1', label: 'Meteor 1', image: imgAst1, fallback: fallbackAssets.asteroid1 },
+            { key: 'asteroid2', label: 'Meteor 2', image: imgAst2, fallback: fallbackAssets.asteroid2 },
+            { key: 'asteroid3', label: 'Meteor 3', image: imgAst3, fallback: fallbackAssets.asteroid3 },
+            { key: 'alien', label: 'Alien', image: imgAlien, fallback: fallbackAssets.alien },
+            { key: 'laser', label: 'Laser', image: imgLaser, fallback: fallbackAssets.laser },
+            { key: 'splash', label: 'Logo', image: imgSplashPreload, fallback: fallbackAssets.splash },
+            { key: 'favicon', label: 'Ikon', image: imgFaviconPreload, fallback: fallbackAssets.favicon }
+        ];
+
+        let failedAssetKeys = [];
+
+        function updatePreloadProgress(done, total) {
+            const progress = total > 0 ? Math.round((done / total) * 100) : 100;
+            assetProgressFill.style.width = `${progress}%`;
+            assetProgressText.textContent = `${progress}%`;
+            loadingShip.style.left = `${progress}%`;
+        }
+
+        function loadImageSource(image, src, timeoutMs = 7000) {
+            return new Promise((resolve, reject) => {
+                let settled = false;
+                const finish = (ok, error) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    image.onload = null;
+                    image.onerror = null;
+                    ok ? resolve(image) : reject(error || new Error('Gagal memuat gambar'));
+                };
+
+                const timer = setTimeout(() => finish(false, new Error('Timeout')), timeoutMs);
+                image.onload = () => finish(true);
+                image.onerror = () => finish(false, new Error('Gagal memuat'));
+                image.src = src;
+
+                if (image.complete && image.naturalWidth > 0) {
+                    finish(true);
+                }
+            });
+        }
+
+        async function loadEntryWithFallback(entry) {
+            try {
+                await loadImageSource(entry.image, assetUrls[entry.key]);
+                return { key: entry.key, online: true };
+            } catch (error) {
+                failedAssetKeys.push(entry.key);
+                try {
+                    await loadImageSource(entry.image, entry.fallback, 2000);
+                } catch (fallbackError) {
+                    // Data-URI SVG seharusnya selalu tersedia. Jika browser sangat lama,
+                    // draw fallback langsung tetap digunakan oleh fungsi drawImageContained.
+                }
+                return { key: entry.key, online: false };
+            }
+        }
+
+        async function preloadGameAssets() {
+            // Tampilkan fallback langsung agar splash dan penunjuk progres tidak pernah kosong.
+            splashLogo.src = fallbackAssets.splash;
+            loadingShip.src = fallbackAssets.ship;
+            updatePreloadProgress(0, preloadEntries.length);
+
+            let finished = 0;
+            failedAssetKeys = [];
+
+            const jobs = preloadEntries.map(async entry => {
+                const result = await loadEntryWithFallback(entry);
+                finished += 1;
+                updatePreloadProgress(finished, preloadEntries.length);
+
+                if (entry.key === 'ship') {
+                    loadingShip.src = entry.image.src || fallbackAssets.ship;
+                } else if (entry.key === 'splash') {
+                    splashLogo.src = entry.image.src || fallbackAssets.splash;
+                } else if (entry.key === 'favicon') {
+                    faviconLink.href = entry.image.src || fallbackAssets.favicon;
+                }
+
+                return result;
+            });
+
+            await Promise.all(jobs);
+            updatePreloadProgress(preloadEntries.length, preloadEntries.length);
+
+            const definitelyOffline = navigator.onLine === false;
+            if (failedAssetKeys.length > 0 || definitelyOffline) {
+                assetStatus.classList.add('offline');
+                assetStatus.textContent = definitelyOffline
+                    ? 'Tidak ada koneksi internet. Mode Offline aktif — aset SVG bawaan digunakan.'
+                    : 'Sebagian aset online tidak dapat dimuat. Mode Offline/Fallback aktif — SVG bawaan digunakan.';
+            } else {
+                assetStatus.classList.remove('offline');
+                assetStatus.textContent = 'Semua aset siap. Tekan LANJUTKAN untuk masuk ke pengaturan game.';
+            }
+
+            continueBtn.classList.remove('hidden');
+        }
+
+        function continueFromSplash() {
+            ensureAudio(); // Interaksi pengguna membuka akses audio pada browser HP/desktop.
+            splashScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            gameState = 'START';
+        }
+
+        function showGameToast(message, type = '') {
+            if (!gameToastLayer) return;
+            const toast = document.createElement('div');
+            toast.className = `game-toast ${type}`.trim();
+            toast.textContent = message;
+            gameToastLayer.appendChild(toast);
+            const animation = toast.animate([
+                { transform: 'translateY(12px) scale(0.88)', opacity: 0 },
+                { transform: 'translateY(0) scale(1.04)', opacity: 1, offset: 0.25 },
+                { transform: 'translateY(-4px) scale(1)', opacity: 1, offset: 0.72 },
+                { transform: 'translateY(-16px) scale(0.98)', opacity: 0 }
+            ], { duration: 1500, easing: 'ease-out', fill: 'forwards' });
+            animation.onfinish = () => toast.remove();
+        }
+
+        function clearConfetti() {
+            if (confettiLayer) confettiLayer.innerHTML = '';
+        }
+
+        function launchConfetti() {
+            if (!confettiLayer) return;
+            clearConfetti();
+            const colors = ['#66fcf1', '#45a29e', '#ffffff', '#ffd166', '#ff6b9a', '#7dd3fc'];
+            for (let i = 0; i < 74; i++) {
+                const piece = document.createElement('span');
+                piece.className = 'confetti-piece';
+                piece.style.left = `${Math.random() * 100}%`;
+                piece.style.background = colors[i % colors.length];
+                piece.style.width = `${6 + Math.random() * 7}px`;
+                piece.style.height = `${10 + Math.random() * 11}px`;
+                piece.style.setProperty('--drift', `${-120 + Math.random() * 240}px`);
+                piece.style.setProperty('--spin', `${360 + Math.random() * 900}deg`);
+                piece.style.animationDuration = `${2.8 + Math.random() * 1.9}s`;
+                piece.style.animationDelay = `${Math.random() * 0.55}s`;
+                confettiLayer.appendChild(piece);
+            }
+            setTimeout(clearConfetti, 5200);
+        }
 
         // Assets (Drawings directly on canvas)
         const ship = {
@@ -813,33 +1507,64 @@
             ctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
         }
 
-        // Handle resizing for Responsive Canvas
+        // Handle resizing for Responsive Canvas + layar High-DPI
+        let viewWidth = 1;
+        let viewHeight = 1;
+        let renderPixelRatio = 1;
+
+        function updateViewportHeight() {
+            const visibleHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            document.documentElement.style.setProperty('--app-height', `${Math.round(visibleHeight)}px`);
+        }
+
         function resizeCanvas() {
-            // Get dimensions of the game container (accounting for numpad on side in landscape)
-            canvas.width = gameContainer.clientWidth;
-            canvas.height = gameContainer.clientHeight;
-            
-            // Re-center ship at the bottom
-            ship.x = canvas.width / 2;
-            ship.y = canvas.height - ship.height / 2 - 20; // 20px padding from bottom
+            updateViewportHeight();
+
+            // Dimensi logis mengikuti area game yang benar-benar terlihat.
+            viewWidth = Math.max(1, gameContainer.clientWidth);
+            viewHeight = Math.max(1, gameContainer.clientHeight);
+
+            // Batasi DPR ke 2 untuk ketajaman yang baik tanpa membebani perangkat secara berlebihan.
+            renderPixelRatio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+            canvas.width = Math.round(viewWidth * renderPixelRatio);
+            canvas.height = Math.round(viewHeight * renderPixelRatio);
+            canvas.style.width = `${viewWidth}px`;
+            canvas.style.height = `${viewHeight}px`;
+            ctx.setTransform(renderPixelRatio, 0, 0, renderPixelRatio, 0, 0);
+
+            // Re-center ship at the bottom dalam koordinat logis.
+            ship.x = viewWidth / 2;
+            ship.y = viewHeight - ship.height / 2 - 20; // 20px padding from bottom
         }
 
         window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 80));
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', resizeCanvas);
+        }
         // Initial resize
+        updateViewportHeight();
         resizeCanvas();
 
-        // Numpad Input Listeners
+        // Numpad layar + keyboard fisik PC/laptop memakai jalur input yang sama.
+        function canAcceptAnswerInput() {
+            return gameState === 'PLAYING' && !pendingWin;
+        }
+
+        function appendInputDigit(val) {
+            if (!canAcceptAnswerInput()) return;
+            if (currentInput.length < 3) currentInput += val;
+        }
+
+        function deleteInputDigit() {
+            if (!canAcceptAnswerInput()) return;
+            currentInput = currentInput.slice(0, -1);
+        }
+
         numBtns.forEach(btn => {
-            // Use 'mousedown' and 'touchstart' for faster response than 'click'
             const pressHandler = (e) => {
-                e.preventDefault(); // Prevent double firing on touch devices
-                if (gameState !== 'PLAYING' || pendingWin) return;
-                
-                const val = btn.getAttribute('data-val');
-                // Limit input length
-                if (currentInput.length < 3) {
-                    currentInput += val;
-                }
+                e.preventDefault();
+                appendInputDigit(btn.getAttribute('data-val'));
             };
             btn.addEventListener('mousedown', pressHandler);
             btn.addEventListener('touchstart', pressHandler, {passive: false});
@@ -847,19 +1572,32 @@
 
         const delHandler = (e) => {
             e.preventDefault();
-            if (gameState !== 'PLAYING' || pendingWin) return;
-            currentInput = currentInput.slice(0, -1);
+            deleteInputDigit();
         };
         delBtn.addEventListener('mousedown', delHandler);
         delBtn.addEventListener('touchstart', delHandler, {passive: false});
 
         const okHandler = (e) => {
             e.preventDefault();
-            if (gameState !== 'PLAYING' || pendingWin) return;
+            if (!canAcceptAnswerInput()) return;
             checkAnswer();
         };
         okBtn.addEventListener('mousedown', okHandler);
         okBtn.addEventListener('touchstart', okHandler, {passive: false});
+
+        document.addEventListener('keydown', (e) => {
+            if (!canAcceptAnswerInput()) return;
+            if (/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+                if (!e.repeat) appendInputDigit(e.key);
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+                if (!e.repeat) deleteInputDigit();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!e.repeat) checkAnswer();
+            }
+        });
 
         // Meteor Selection Logic
         function handleSelectInteraction(x, y) {
@@ -869,6 +1607,7 @@
             // Check collision with meteors in reverse order (topmost first)
             for (let i = meteors.length - 1; i >= 0; i--) {
                 const m = meteors[i];
+                if (m.dead || m.isTargeted) continue;
                 // Simple circle collision check
                 const dist = Math.hypot(x - m.x, y - m.y);
                 if (dist <= m.radius * 1.5) { // Generous hitbox for touch
@@ -952,7 +1691,7 @@
                 this.image = this.isAlien ? imgAlien : astImages[Math.floor(Math.random() * astImages.length)];
                 
                 // Spawn position
-                this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+                this.x = Math.random() * (viewWidth - this.radius * 2) + this.radius;
                 this.y = -this.radius; // Start slightly above screen
                 
                 // Speed increases slightly over time
@@ -1014,12 +1753,14 @@
         }
 
         class Laser {
-            constructor(startX, startY, targetMeteor, isDud) {
+            constructor(startX, startY, targetMeteor, isDud, isFinalSalvo = false) {
                 this.x = startX;
                 this.y = startY;
                 this.target = targetMeteor;
                 this.isDud = isDud; // Penanda jika laser salah jawaban
-                this.speed = 800; // pixels per sec (fast)
+                this.isFinalSalvo = isFinalSalvo;
+                this.awardsPoint = !isDud && !isFinalSalvo;
+                this.speed = isFinalSalvo ? 950 : 800; // Salvo kemenangan dibuat sedikit lebih cepat dan homing.
                 this.active = true;
                 
                 this.width = 15;
@@ -1032,7 +1773,7 @@
                 // Calculate trajectory
                 const dx = this.target.x - this.x;
                 const dy = this.target.y - this.y;
-                const dist = Math.hypot(dx, dy);
+                const dist = Math.max(0.0001, Math.hypot(dx, dy));
                 this.vx = (dx / dist) * this.speed;
                 this.vy = (dy / dist) * this.speed;
                 
@@ -1055,6 +1796,32 @@
                     }
                     return false;
                 }
+
+                // Salvo kemenangan mengikuti posisi meteor yang tetap bergerak.
+                if (this.isFinalSalvo) {
+                    if (!this.target || this.target.dead) {
+                        this.active = false;
+                        return false;
+                    }
+
+                    const dx = this.target.x - this.x;
+                    const dy = this.target.y - this.y;
+                    const dist = Math.max(0.0001, Math.hypot(dx, dy));
+                    this.angle = Math.atan2(dy, dx);
+
+                    if (dist <= this.target.radius + this.speed * dt) {
+                        this.x = this.target.x;
+                        this.y = this.target.y;
+                        this.active = false;
+                        return true;
+                    }
+
+                    this.vx = (dx / dist) * this.speed;
+                    this.vy = (dy / dist) * this.speed;
+                    this.x += this.vx * dt;
+                    this.y += this.vy * dt;
+                    return false;
+                }
                 
                 // Logika Laser Normal (Jawaban Benar)
                 this.x += this.vx * dt;
@@ -1071,7 +1838,7 @@
                 }
                 
                 // Remove if off screen
-                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                if (this.x < 0 || this.x > viewWidth || this.y < 0 || this.y > viewHeight) {
                     this.active = false;
                 }
                 return false;
@@ -1089,6 +1856,39 @@
                 
                 drawImageContained(ctx, imgLaser, 0, 0, this.width, this.height);
                 
+                ctx.restore();
+            }
+        }
+
+        class FloatingScore {
+            constructor(x, y, text = '+10') {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.life = 1;
+                this.active = true;
+            }
+
+            update(dt) {
+                this.y -= 34 * dt;
+                this.life -= dt * 1.45;
+                if (this.life <= 0) this.active = false;
+            }
+
+            draw(ctx) {
+                if (!this.active) return;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, Math.min(1, this.life));
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 24px Roboto';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+                ctx.strokeText(this.text, this.x, this.y);
+                ctx.fillStyle = '#66fcf1';
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = '#66fcf1';
+                ctx.fillText(this.text, this.x, this.y);
                 ctx.restore();
             }
         }
@@ -1141,42 +1941,62 @@
         }
 
         function checkAnswer() {
-            if (!selectedMeteor) return;
+            if (!selectedMeteor || selectedMeteor.dead || selectedMeteor.isTargeted) return;
             if (currentInput === "") return;
             
             const numInput = parseInt(currentInput);
-            
-            // Determine origin point at top of ship based on angle
             const tipRadius = ship.height / 2;
             const tipX = ship.x + Math.sin(ship.angle) * tipRadius;
             const tipY = ship.y - Math.cos(ship.angle) * tipRadius;
             
             if (numInput === selectedMeteor.answer) {
-                // Jawaban Benar! Tembak laser nyata. (isDud = false)
-                lasers.push(new Laser(tipX, tipY, selectedMeteor, false));
-                
-                // Add score immediately
-                score += 10;
-                scoreDisplay.innerText = score;
-                
-                selectedMeteor.isTargeted = true;
-                if (score >= targetScore) {
-                    pendingWin = true;
-                    selectedMeteor.isWinningTarget = true;
-                    // Beri waktu singkat agar tembakan terakhir tetap terlihat sebelum layar kemenangan.
-                    setTimeout(() => {
-                        if (pendingWin && gameState === 'PLAYING') winGame();
-                    }, 650);
-                }
+                // Jawaban benar tetap menjalani tembakan normal sampai benar-benar mengenai target.
+                // Poin +10 diberikan saat meteor/alien meledak, bukan saat tombol OK ditekan.
+                const target = selectedMeteor;
+                target.isTargeted = true;
+                lasers.push(new Laser(tipX, tipY, target, false));
+                playSfx('shoot');
                 selectedMeteor = null;
-                currentInput = ""; // Clear input on success
-                
+                currentInput = "";
             } else {
-                // Jawaban Salah! Tembak laser palsu yang akan menghilang. (isDud = true)
+                // Jawaban salah: laser dud dan input dikosongkan untuk mencoba lagi.
                 lasers.push(new Laser(tipX, tipY, selectedMeteor, true));
-                
-                currentInput = ""; // Hapus input agar pemain bisa coba lagi
+                playSfx('wrong');
+                currentInput = "";
             }
+        }
+
+        function beginVictoryPending() {
+            if (gameState !== 'PLAYING') return;
+            gameState = 'VICTORY_PENDING';
+            pendingWin = true;
+            victoryPendingTimer = 0.55; // Beri waktu ledakan tembakan pencapai target terlihat dahulu.
+            currentInput = "";
+            selectedMeteor = null;
+            ship.angle = 0;
+        }
+
+        function beginVictoryClear() {
+            if (gameState !== 'VICTORY_PENDING' && gameState !== 'PLAYING') return;
+
+            gameState = 'VICTORY_CLEAR';
+            pendingWin = true;
+            currentInput = "";
+            selectedMeteor = null;
+            ship.angle = 0;
+
+            // Sesudah tembakan pencapai target selesai meledak, barulah salvo otomatis dimulai.
+            lasers = [];
+            playSfx('finalAttack');
+
+            const tipX = ship.x;
+            const tipY = ship.y - ship.height / 2;
+            const activeTargets = meteors.filter(m => !m.dead);
+
+            activeTargets.forEach(target => {
+                target.isTargeted = true;
+                lasers.push(new Laser(tipX, tipY, target, false, true));
+            });
         }
 
         function showLifeBonusEffect(x, y) {
@@ -1215,6 +2035,7 @@
 
             lives++;
             livesDisplay.innerText = lives;
+            playSfx('lifeBonus');
             showLifeBonusEffect(target.x, target.y);
 
             livesHudItem.classList.remove('life-gain-pulse');
@@ -1259,7 +2080,7 @@
         function drawBackground() {
             // Simple starry background
             ctx.fillStyle = '#0b0c10';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, viewWidth, viewHeight);
             
             // Draw some stars (static for performance)
             // Ideally we'd have a starfield object, let's just do static dots for now
@@ -1290,58 +2111,70 @@
         initStars();
 
         function update(dt) {
-            timeElapsed += dt * 1000;
-            meteorSpawnTimer += dt * 1000;
+            const isPlaying = gameState === 'PLAYING';
+            const isVictoryPending = gameState === 'VICTORY_PENDING';
+            const isVictoryClear = gameState === 'VICTORY_CLEAR';
+            if (!isPlaying && !isVictoryPending && !isVictoryClear) return;
 
-            // Spawn meteors sesuai Level Kepadatan yang dipilih.
-            // Kepadatan hanya mengatur frekuensi/jumlah meteor, bukan kecepatan jatuh.
-            if (meteorSpawnTimer >= meteorSpawnInterval) {
-                if (meteors.length < maxMeteorsOnScreen) {
-                    meteors.push(new Meteor());
+            if (isPlaying) {
+                timeElapsed += dt * 1000;
+                meteorSpawnTimer += dt * 1000;
+
+                // Spawn meteors sesuai Level Kepadatan yang dipilih.
+                // Kepadatan hanya mengatur frekuensi/jumlah meteor, bukan kecepatan jatuh.
+                if (meteorSpawnTimer >= meteorSpawnInterval) {
+                    if (meteors.length < maxMeteorsOnScreen) {
+                        meteors.push(new Meteor());
+                    }
+                    meteorSpawnTimer = 0;
                 }
-                meteorSpawnTimer = 0;
             }
 
-            // Update entities
+            // Meteor yang sudah ada tetap bergerak saat jeda kemenangan dan final attack berlangsung.
             meteors.forEach(m => m.update(dt));
             
             lasers.forEach(l => {
-                let hit = l.update(dt);
-                if (hit && l.target) {
-                    // Create explosion
-                    explosions.push(new Explosion(l.target.x, l.target.y));
+                const hit = l.update(dt);
+                if (hit && l.target && !l.target.dead) {
+                    const target = l.target;
+                    explosions.push(new Explosion(target.x, target.y));
+                    playSfx(target.isAlien ? 'alienExplosion' : 'explosion');
 
-                    // Bonus 1 nyawa setiap berhasil menghancurkan alien ke-3, ke-6, ke-9, dst.
-                    if (l.target.isAlien && !l.target.alienKillCounted) {
-                        l.target.alienKillCounted = true;
-                        awardAlienLifeBonus(l.target);
+                    // Hanya tembakan pemain yang mengenai target saat fase PLAYING yang menambah skor.
+                    // Setelah target tercapai, laser lama yang kebetulan masih terbang tidak menambah skor lagi.
+                    const playerScoringHit = l.awardsPoint && gameState === 'PLAYING';
+                    if (playerScoringHit) {
+                        score += 10;
+                        scoreDisplay.innerText = score;
+                        scorePopups.push(new FloatingScore(target.x, target.y - 8, '+10'));
                     }
 
-                    // Mark meteor for removal
-                    l.target.dead = true;
-
-                    // Target skor tercapai: kemenangan dipastikan setelah tembakan mengenai target.
-                    if (l.target.isWinningTarget) {
-                        winGame();
+                    // Bonus alien hanya dihitung dari tembakan pemain, bukan salvo otomatis kemenangan.
+                    if (playerScoringHit && target.isAlien && !target.alienKillCounted) {
+                        target.alienKillCounted = true;
+                        awardAlienLifeBonus(target);
                     }
-                    // Note: Score added in checkAnswer() to feel instant, not on hit
+
+                    target.dead = true;
+
+                    // Jika ledakan ini menghasilkan skor target, tunggu ledakan normal selesai terlihat
+                    // sebelum meluncurkan salvo otomatis ke semua target yang tersisa.
+                    if (playerScoringHit && score >= targetScore) {
+                        beginVictoryPending();
+                    }
                 }
             });
-
-            if (gameState !== 'PLAYING') return;
             
             explosions.forEach(e => e.update(dt));
+            scorePopups.forEach(p => p.update(dt));
 
             // Collision and Cleanup
-            // Remove dead lasers
             lasers = lasers.filter(l => l.active);
-            
-            // Remove dead explosions
             explosions = explosions.filter(e => e.active);
+            scorePopups = scorePopups.filter(p => p.active);
 
-            // Check Meteor collisions with ground/ship
             for (let i = meteors.length - 1; i >= 0; i--) {
-                let m = meteors[i];
+                const m = meteors[i];
                 
                 // If hit by laser
                 if (m.dead) {
@@ -1350,28 +2183,56 @@
                     continue;
                 }
 
-                // Check collision with ship or bottom of screen
-                // Consider the 'play area' ends slightly above the ship
-                if (m.y + m.radius >= ship.y - ship.height/2) {
+                // Pada final attack meteor tetap bergerak sampai terkena laser;
+                // benturan ke pesawat tidak lagi mengurangi nyawa atau mengakhiri permainan.
+                if (gameState === 'PLAYING' && m.y + m.radius >= ship.y - ship.height/2) {
                     // Impact!
                     explosions.push(new Explosion(m.x, m.y));
+                    playSfx('lifeLost');
                     meteors.splice(i, 1);
                     if (selectedMeteor === m) selectedMeteor = null;
                     
                     lives--;
                     livesDisplay.innerText = lives;
                     
-                    // Shake screen effect?
-                    
                     if (lives <= 0 && gameState === 'PLAYING') {
-                        if (pendingWin) {
-                            winGame();
+                        if (score >= 20) {
+                            // Skor menjadi cadangan nyawa: bayar 20 poin untuk kembali memiliki 1 nyawa.
+                            score -= 20;
+                            lives = 1;
+                            scoreDisplay.innerText = score;
+                            livesDisplay.innerText = lives;
+                            playSfx('rescue');
+                            showGameToast('−20 SKOR • NYAWA DISELAMATKAN!', 'rescue');
+                            livesHudItem.classList.remove('life-gain-pulse');
+                            void livesHudItem.offsetWidth;
+                            livesHudItem.classList.add('life-gain-pulse');
                         } else {
                             endGame();
+                            break;
                         }
-                        break;
                     }
                 }
+            }
+
+            if (isVictoryPending) {
+                ship.angle = 0;
+                victoryPendingTimer = Math.max(0, victoryPendingTimer - dt);
+                if (victoryPendingTimer <= 0 && gameState === 'VICTORY_PENDING') {
+                    beginVictoryClear();
+                }
+                return;
+            }
+
+            if (isVictoryClear) {
+                // Selama final attack, pesawat selalu menghadap lurus ke atas.
+                ship.angle = 0;
+
+                // Tampilkan MENANG hanya setelah semua target hancur dan efek ledakannya selesai terlihat.
+                if (meteors.length === 0 && explosions.length === 0) {
+                    winGame();
+                }
+                return;
             }
             
             // Ensure ship angle points towards selected meteor if moving
@@ -1381,25 +2242,25 @@
                 ship.angle = Math.atan2(dy, dx) + Math.PI / 2;
             } else if (!selectedMeteor) {
                 // Slowly return to center pointing up
-                let targetAngle = 0;
-                // Simple lerp to 0
+                const targetAngle = 0;
                 ship.angle += (targetAngle - ship.angle) * 0.1;
             }
         }
 
         function draw() {
             // Clear canvas (actually we fill black in drawBackground)
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, viewWidth, viewHeight);
             // Background handled by CSS mainly, but we can clear canvas
             
             meteors.forEach(m => m.draw(ctx));
             lasers.forEach(l => l.draw(ctx));
             explosions.forEach(e => e.draw(ctx));
+            scorePopups.forEach(p => p.draw(ctx));
             drawShip(ctx);
         }
 
         function gameLoop(timestamp) {
-            if (gameState !== 'PLAYING') return;
+            if (!['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) return;
 
             let dt = (timestamp - lastTime) / 1000;
             // Cap dt to prevent huge jumps if tab is inactive
@@ -1426,6 +2287,9 @@
 
             // Reset Stats
             pendingWin = false;
+            victoryPendingTimer = 0;
+            clearConfetti();
+            stopMusic();
             score = 0;
             lives = 3;
             alienKills = 0;
@@ -1439,6 +2303,7 @@
             meteors = [];
             lasers = [];
             explosions = [];
+            scorePopups = [];
             currentInput = "";
             selectedMeteor = null;
             ship.angle = 0;
@@ -1455,6 +2320,8 @@
             resizeCanvas();
 
             gameState = 'PLAYING';
+            ensureAudio();
+            startMusic();
             lastTime = performance.now();
             animationId = requestAnimationFrame(gameLoop);
         }
@@ -1463,7 +2330,10 @@
             if (gameState !== 'PLAYING') return;
             gameState = 'GAMEOVER';
             pendingWin = false;
+            stopMusic();
+            clearConfetti();
             cancelAnimationFrame(animationId);
+            playSfx('lose');
             
             // Show Game Over UI
             uiLayer.classList.add('hidden');
@@ -1477,10 +2347,12 @@
         }
 
         function winGame() {
-            if (gameState !== 'PLAYING') return;
+            if (!['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) return;
             gameState = 'WIN';
             pendingWin = false;
+            stopMusic();
             cancelAnimationFrame(animationId);
+            playSfx('win');
 
             uiLayer.classList.add('hidden');
             numpadContainer.classList.add('hidden');
@@ -1490,15 +2362,20 @@
             winScreen.classList.remove('hidden');
 
             winScoreDisplay.innerText = `Skor Akhir: ${score} — Target ${targetScore} tercapai!`;
+            launchConfetti();
         }
 
         function goHome() {
             if (animationId) cancelAnimationFrame(animationId);
             gameState = 'START';
             pendingWin = false;
+            victoryPendingTimer = 0;
+            stopMusic();
+            clearConfetti();
             meteors = [];
             lasers = [];
             explosions = [];
+            scorePopups = [];
             currentInput = "";
             selectedMeteor = null;
 
@@ -1534,6 +2411,11 @@
         winRestartBtn.addEventListener('click', startGame);
         homeBtn.addEventListener('click', goHome);
         fullscreenBtn.addEventListener('click', toggleFullscreen);
+        soundBtn.addEventListener('click', toggleSound);
+        continueBtn.addEventListener('click', continueFromSplash);
+
+        // Mulai preloader setelah seluruh elemen halaman siap.
+        preloadGameAssets();
 
     </script>
 </body>
