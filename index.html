@@ -140,7 +140,7 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-bottom: clamp(40px, 8vw, 80px);
+            margin-bottom: clamp(24px, 4vw, 42px);
         }
 
         .brand { display: inline-flex; align-items: center; gap: 14px; user-select: none; }
@@ -176,14 +176,14 @@
         .theme-toggle svg { width: 20px; height: 20px; }
 
         /* Hero Section */
-        .hero { text-align: center; max-width: 800px; margin: 0 auto clamp(40px, 6vw, 60px); }
+        .hero { text-align: center; max-width: 800px; margin: 0 auto clamp(28px, 4vw, 40px); }
 
         .eyebrow {
             display: inline-flex; align-items: center; gap: 8px;
             padding: 8px 16px; border: 1px solid var(--border); border-radius: 100px;
             background: var(--surface); color: var(--text);
             font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-            backdrop-filter: blur(12px); margin-bottom: 24px;
+            backdrop-filter: blur(12px); margin-bottom: 16px;
         }
         .eyebrow-dot {
             width: 8px; height: 8px; border-radius: 50%;
@@ -196,9 +196,12 @@
             50% { opacity: 0.5; transform: scale(0.8); }
         }
 
-        h1 {
-            margin: 0; font-size: clamp(40px, 8vw, 84px);
-            line-height: 1.05; letter-spacing: -0.03em; font-weight: 800;
+        .hero-title {
+            margin: 0;
+            font-size: clamp(44px, 6.5vw, 78px) !important;
+            line-height: 1.02;
+            letter-spacing: -0.04em;
+            font-weight: 800;
         }
         .accent {
             background: linear-gradient(to right, var(--blue-2), var(--blue-neon), var(--blue));
@@ -206,14 +209,14 @@
             display: inline-block;
         }
         .hero p {
-            margin: 24px auto 0; max-width: 600px; color: var(--text-muted);
+            margin: 14px auto 0; max-width: 600px; color: var(--text-muted);
             font-size: clamp(16px, 2vw, 20px); line-height: 1.6; font-weight: 300;
         }
 
         /* Game Grid */
         .section-head {
             display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
-            margin-bottom: 24px; padding-bottom: 16px;
+            margin-bottom: 20px; padding-bottom: 14px;
             border-bottom: 1px solid var(--border);
         }
         .section-title { margin: 0; font-size: clamp(24px, 3vw, 32px); font-weight: 700; }
@@ -236,7 +239,7 @@
 
         .game-visual {
             aspect-ratio: 16 / 9; position: relative; overflow: hidden;
-            display: grid; place-items: center; border-bottom: 1px solid var(--border);
+            display: grid; place-items: center; border-bottom: 0;
         }
         .game-card.math .game-visual {
             background:
@@ -277,15 +280,51 @@
         .game-name { margin: 0; font-size: clamp(20px, 2.5vw, 24px); font-weight: 700; line-height: 1.2; }
         .game-desc { margin: 8px 0 0; color: var(--text-muted); font-size: 14px; font-weight: 300; line-height: 1.5; }
 
-        .play-btn {
-            width: 56px; height: 56px; border-radius: 50%;
-            display: grid; place-items: center; color: #fff;
-            background: linear-gradient(135deg, var(--blue-2), var(--blue));
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
-            flex: 0 0 auto; transition: all 0.4s ease;
+        .card-ornament {
+            width: 84px;
+            height: 54px;
+            position: relative;
+            flex: 0 0 auto;
+            align-self: stretch;
+            min-height: 54px;
+            overflow: hidden;
+            pointer-events: none;
         }
-        .game-card:hover .play-btn { transform: scale(1.1) rotate(5deg); }
-        .play-btn svg { width: 24px; height: 24px; margin-left: 4px; } /* Optical center */
+
+        .card-ornament span {
+            position: absolute;
+            display: block;
+            clip-path: polygon(50% 0, 100% 100%, 0 100%);
+            background: linear-gradient(145deg, rgba(125, 211, 252, .92), rgba(56, 189, 248, .55));
+            filter: drop-shadow(0 8px 12px rgba(14, 165, 233, .08));
+        }
+
+        .card-ornament .tri-1 {
+            width: 54px;
+            height: 42px;
+            right: -4px;
+            bottom: -10px;
+            transform: rotate(-8deg);
+            opacity: .68;
+        }
+
+        .card-ornament .tri-2 {
+            width: 36px;
+            height: 30px;
+            right: 35px;
+            bottom: -5px;
+            transform: rotate(11deg);
+            opacity: .42;
+        }
+
+        .card-ornament .tri-3 {
+            width: 24px;
+            height: 20px;
+            right: 15px;
+            bottom: 23px;
+            transform: rotate(7deg);
+            opacity: .28;
+        }
 
         /* Future Section & Footer */
         .future {
@@ -298,6 +337,21 @@
 
         footer { margin-top: auto; padding: 60px 0 24px; text-align: center; color: var(--text-muted); font-size: 14px; font-weight: 300; }
         footer strong { color: var(--text); font-weight: 600; }
+
+        .footer-gradient-link {
+            font-weight: 700;
+            text-decoration: none;
+            background: linear-gradient(to right, var(--blue-2), var(--blue-neon), var(--blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: opacity .25s ease, filter .25s ease;
+        }
+
+        .footer-gradient-link:hover {
+            opacity: .82;
+            filter: brightness(1.12);
+        }
         
         /* Utility */
         .hidden-start { opacity: 0; transform: scale(1.05); pointer-events: none; position: absolute; top:0; left:0; width: 100%; }
@@ -305,8 +359,20 @@
         @media (max-width: 768px) {
             .topbar { padding: 12px 16px; border-radius: 24px; }
             .section-note { display: none; }
-            .game-info { flex-direction: column; align-items: flex-start; text-align: left; }
-            .play-btn { align-self: flex-end; margin-top: -30px; }
+            .page-container { width: min(100% - 24px, var(--max)); }
+            .game-grid { grid-template-columns: 1fr; gap: 22px; }
+            .game-info { padding: 20px; align-items: center; }
+            .card-ornament { width: 70px; }
+            .hero-title { font-size: clamp(38px, 11vw, 58px) !important; }
+        }
+
+        @media (max-height: 560px) and (orientation: landscape) {
+            #main-content { padding-top: 14px; padding-bottom: 14px; }
+            .topbar { margin-bottom: 18px; }
+            .hero { margin-bottom: 22px; }
+            .eyebrow { margin-bottom: 10px; }
+            .hero p { margin-top: 8px; }
+            .section-head { margin-bottom: 14px; padding-bottom: 10px; }
         }
     </style>
 </head>
@@ -388,8 +454,8 @@
             <!-- Hero Section -->
             <section class="hero">
                 <div class="eyebrow"><span class="eyebrow-dot"></span> Play • Learn • Grow</div>
-                <h1>Belajar jadi lebih <span class="accent">seru.</span></h1>
-                <p>Pilih game favoritmu dan mulai bermain. Satu tempat elegan untuk berbagai permainan belajar yang menyenangkan dan mudah digunakan.</p>
+                <h1 class="hero-title">Belajar jadi lebih <span class="accent">seru.</span></h1>
+                <p>Pilih game favoritmu dan mulai bermain.</p>
             </section>
 
             <!-- Games Grid -->
@@ -433,10 +499,10 @@
                                 <h3 class="game-name">Game Berhitung</h3>
                                 <p class="game-desc">Latih logika dan kecepatan berhitung harianmu.</p>
                             </div>
-                            <div class="play-btn">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path d="m9 7 8 5-8 5V7Z" fill="currentColor"/>
-                                </svg>
+                            <div class="card-ornament" aria-hidden="true">
+                                <span class="tri-1"></span>
+                                <span class="tri-2"></span>
+                                <span class="tri-3"></span>
                             </div>
                         </div>
                     </a>
@@ -478,14 +544,14 @@
                         </div>
                         <div class="game-info">
                             <div>
-                                <div class="category">Tantangan</div>
-                                <h3 class="game-name">Meteor Defender</h3>
+                                <div class="category">Matematika</div>
+                                <h3 class="game-name">Math Meteor Defender</h3>
                                 <p class="game-desc">Pertahankan bumi dari serangan meteor dengan angka.</p>
                             </div>
-                            <div class="play-btn">
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path d="m9 7 8 5-8 5V7Z" fill="currentColor"/>
-                                </svg>
+                            <div class="card-ornament" aria-hidden="true">
+                                <span class="tri-1"></span>
+                                <span class="tri-2"></span>
+                                <span class="tri-3"></span>
                             </div>
                         </div>
                     </a>
@@ -499,7 +565,7 @@
                 </div>
             </section>
 
-            <footer>Desain Premium oleh <strong>Gurukemarinsore</strong></footer>
+            <footer>Dikembangkan oleh <a class="footer-gradient-link" href="https://www.tiktok.com/@gurukemarinsore" target="_blank" rel="noopener noreferrer" aria-label="TikTok Gurukemarinsore">Gurukemarinsore</a></footer>
         </div>
     </main>
 
