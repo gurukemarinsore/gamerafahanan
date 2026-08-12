@@ -616,6 +616,16 @@
             filter: drop-shadow(0 0 18px rgba(102, 252, 241, 0.25));
         }
 
+        #splash-logo.offline-ship {
+            width: min(260px, 54vw);
+            height: min(260px, 30dvh);
+            max-width: none;
+            max-height: none;
+            transform: rotate(60deg) scale(1.08);
+            transform-origin: center;
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.36));
+        }
+
         .asset-progress-wrap {
             width: min(420px, 82vw);
             padding-top: 2px;
@@ -716,6 +726,12 @@
 
             .splash-logo-wrap {
                 height: 112px;
+            }
+
+            #splash-logo.offline-ship {
+                width: 118px;
+                height: 118px;
+                transform: rotate(60deg) scale(1.02);
             }
 
             .asset-loading-label {
@@ -993,7 +1009,7 @@
         const okBtn = document.getElementById('btn-ok');
 
         // Game State Variables
-        let gameState = 'LOADING'; // LOADING, START, PLAYING, VICTORY_PENDING, VICTORY_CLEAR, GAMEOVER, WIN
+        let gameState = 'LOADING'; // LOADING, START, PLAYING, VICTORY_PENDING, VICTORY_CLEAR, VICTORY_EXIT, GAMEOVER, WIN
         let score = 0;
         let lives = 3;
         let alienKills = 0;
@@ -1088,8 +1104,62 @@
             input.addEventListener('change', updateMathLevelLabels);
         });
 
-        targetMinusBtn.addEventListener('click', () => changeTargetScore(-10));
-        targetPlusBtn.addEventListener('click', () => changeTargetScore(10));
+        function bindTargetHoldButton(button, delta) {
+            let holdDelayTimer = null;
+            let holdRepeatTimer = null;
+
+            const clearHoldTimers = () => {
+                clearTimeout(holdDelayTimer);
+                clearInterval(holdRepeatTimer);
+                holdDelayTimer = null;
+                holdRepeatTimer = null;
+            };
+
+            const stepTarget = () => {
+                if (button.disabled) {
+                    clearHoldTimers();
+                    return;
+                }
+                changeTargetScore(delta);
+                if (button.disabled) clearHoldTimers();
+            };
+
+            button.addEventListener('pointerdown', (e) => {
+                if (button.disabled) return;
+                e.preventDefault();
+                clearHoldTimers();
+                if (button.setPointerCapture) {
+                    try { button.setPointerCapture(e.pointerId); } catch (error) {}
+                }
+
+                // Sentuhan/klik singkat tetap mengubah 10 poin sekali.
+                stepTarget();
+
+                // Tahan sebentar, lalu ulangi otomatis agar cepat menuju target jauh.
+                holdDelayTimer = setTimeout(() => {
+                    holdRepeatTimer = setInterval(stepTarget, 95);
+                }, 430);
+            });
+
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(eventName => {
+                button.addEventListener(eventName, clearHoldTimers);
+            });
+
+            // Cegah click sintetis menambah satu langkah lagi setelah pointerdown.
+            button.addEventListener('click', (e) => e.preventDefault());
+
+            // Tetap mendukung aktivasi tombol melalui keyboard.
+            button.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!e.repeat) stepTarget();
+                    else if (!button.disabled) stepTarget();
+                }
+            });
+        }
+
+        bindTargetHoldButton(targetMinusBtn, -10);
+        bindTargetHoldButton(targetPlusBtn, 10);
         updateMathLevelLabels();
         updateTargetScoreControls();
 
@@ -1097,8 +1167,11 @@
         let audioEnabled = true;
         let audioCtx = null;
         let masterGain = null;
+        let masterCompressor = null;
+        let masterOutputGain = null;
         let musicTimer = null;
         let musicStep = 0;
+        const normalizedMasterLevel = 3.2;
         const musicNotes = [220.00, 277.18, 329.63, 277.18, 196.00, 246.94, 293.66, 246.94];
 
         function ensureAudio() {
@@ -1108,9 +1181,25 @@
 
             if (!audioCtx) {
                 audioCtx = new AudioContextClass();
+
+                // Normalisasi/mastering ringan: sinyal dinaikkan lalu ditahan compressor
+                // agar terdengar penuh pada HP/PC tanpa mudah clipping saat banyak efek berbunyi bersamaan.
                 masterGain = audioCtx.createGain();
-                masterGain.gain.value = 1;
-                masterGain.connect(audioCtx.destination);
+                masterGain.gain.value = normalizedMasterLevel;
+
+                masterCompressor = audioCtx.createDynamicsCompressor();
+                masterCompressor.threshold.value = -18;
+                masterCompressor.knee.value = 18;
+                masterCompressor.ratio.value = 8;
+                masterCompressor.attack.value = 0.003;
+                masterCompressor.release.value = 0.18;
+
+                masterOutputGain = audioCtx.createGain();
+                masterOutputGain.gain.value = 0.95;
+
+                masterGain.connect(masterCompressor);
+                masterCompressor.connect(masterOutputGain);
+                masterOutputGain.connect(audioCtx.destination);
             }
             if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
             return audioCtx;
@@ -1197,7 +1286,7 @@
         }
 
         function musicTick() {
-            if (!audioEnabled || !['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) return;
+            if (!audioEnabled || !['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR', 'VICTORY_EXIT'].includes(gameState)) return;
             const note = musicNotes[musicStep % musicNotes.length];
             playTone(note, 0.13, 'square', 0.012);
             if (musicStep % 4 === 0) playTone(note / 2, 0.18, 'triangle', 0.008);
@@ -1229,11 +1318,11 @@
             audioEnabled = !audioEnabled;
             if (!audioEnabled) {
                 stopMusic();
-                if (masterGain && audioCtx) masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+                if (masterGain && audioCtx) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
             } else {
                 ensureAudio();
-                if (masterGain && audioCtx) masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
-                if (['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) startMusic();
+                if (masterGain && audioCtx) masterGain.gain.setTargetAtTime(normalizedMasterLevel, audioCtx.currentTime, 0.01);
+                if (['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR', 'VICTORY_EXIT'].includes(gameState)) startMusic();
             }
             renderSoundIcon();
         }
@@ -1306,6 +1395,10 @@
             favicon: svgToDataUri(`
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0b0c10"/><path d="M32 7 43 29 39 49 32 59 25 49 21 29Z" fill="#45a29e" stroke="#66fcf1" stroke-width="3"/><circle cx="32" cy="29" r="6" fill="#0b0c10"/></svg>`)
         };
+
+        // Revisi 006: ilustrasi splash offline memakai SVG pesawat yang sama persis
+        // dengan pesawat fallback pada progress bar.
+        fallbackAssets.splash = fallbackAssets.ship;
 
         const assetUrls = {
             ship: 'https://i.imgur.com/2eXRJAn.png',
@@ -1390,6 +1483,7 @@
         async function preloadGameAssets() {
             // Tampilkan fallback langsung agar splash dan penunjuk progres tidak pernah kosong.
             splashLogo.src = fallbackAssets.splash;
+            splashLogo.classList.add('offline-ship');
             loadingShip.src = fallbackAssets.ship;
             updatePreloadProgress(0, preloadEntries.length);
 
@@ -1405,6 +1499,7 @@
                     loadingShip.src = entry.image.src || fallbackAssets.ship;
                 } else if (entry.key === 'splash') {
                     splashLogo.src = entry.image.src || fallbackAssets.splash;
+                    splashLogo.classList.toggle('offline-ship', !result.online);
                 } else if (entry.key === 'favicon') {
                     faviconLink.href = entry.image.src || fallbackAssets.favicon;
                 }
@@ -1986,6 +2081,7 @@
             ship.angle = 0;
 
             // Sesudah tembakan pencapai target selesai meledak, barulah salvo otomatis dimulai.
+            // Kotak input tidak lagi digambar mulai fase ini.
             lasers = [];
             playSfx('finalAttack');
 
@@ -1997,6 +2093,16 @@
                 target.isTargeted = true;
                 lasers.push(new Laser(tipX, tipY, target, false, true));
             });
+        }
+
+        function beginVictoryExit() {
+            if (gameState !== 'VICTORY_CLEAR') return;
+            gameState = 'VICTORY_EXIT';
+            pendingWin = true;
+            currentInput = "";
+            selectedMeteor = null;
+            ship.angle = 0;
+            lasers = [];
         }
 
         function showLifeBonusEffect(x, y) {
@@ -2054,27 +2160,31 @@
             
             ctx.restore();
             
-            // Draw Input Number on ship (after restore so it stays upright)
-            ctx.save();
-            ctx.translate(ship.x, ship.y + 35); // Posisi box input di bawah pesawat
-            ctx.fillStyle = '#1f2833'; // background rect
-            ctx.fillRect(-30, -15, 60, 30);
-            
-            ctx.strokeStyle = '#66fcf1';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(-30, -15, 60, 30);
-            
-            ctx.fillStyle = '#66fcf1';
-            ctx.font = 'bold 20px Roboto';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            // Blinking cursor effect if empty
-            let displayText = currentInput;
-            if (displayText === "" && Math.floor(Date.now() / 500) % 2 === 0) {
-                displayText = "_";
+            // Kotak input hanya terlihat selama permainan normal.
+            // Begitu tembakan pencapai target selesai dan fase kemenangan dimulai,
+            // pesawat tampil bersih tanpa kotak input sampai keluar dari layar.
+            if (gameState === 'PLAYING') {
+                ctx.save();
+                ctx.translate(ship.x, ship.y + 35); // Posisi box input di bawah pesawat
+                ctx.fillStyle = '#1f2833'; // background rect
+                ctx.fillRect(-30, -15, 60, 30);
+                
+                ctx.strokeStyle = '#66fcf1';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-30, -15, 60, 30);
+                
+                ctx.fillStyle = '#66fcf1';
+                ctx.font = 'bold 20px Roboto';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Blinking cursor effect if empty
+                let displayText = currentInput;
+                if (displayText === "" && Math.floor(Date.now() / 500) % 2 === 0) {
+                    displayText = "_";
+                }
+                ctx.fillText(displayText, 0, 0);
+                ctx.restore();
             }
-            ctx.fillText(displayText, 0, 0);
-            ctx.restore();
         }
 
         function drawBackground() {
@@ -2114,7 +2224,8 @@
             const isPlaying = gameState === 'PLAYING';
             const isVictoryPending = gameState === 'VICTORY_PENDING';
             const isVictoryClear = gameState === 'VICTORY_CLEAR';
-            if (!isPlaying && !isVictoryPending && !isVictoryClear) return;
+            const isVictoryExit = gameState === 'VICTORY_EXIT';
+            if (!isPlaying && !isVictoryPending && !isVictoryClear && !isVictoryExit) return;
 
             if (isPlaying) {
                 timeElapsed += dt * 1000;
@@ -2228,8 +2339,20 @@
                 // Selama final attack, pesawat selalu menghadap lurus ke atas.
                 ship.angle = 0;
 
-                // Tampilkan MENANG hanya setelah semua target hancur dan efek ledakannya selesai terlihat.
+                // Sesudah semua musuh dan ledakannya benar-benar selesai,
+                // pesawat pergi terlebih dahulu sebelum layar MENANG ditampilkan.
                 if (meteors.length === 0 && explosions.length === 0) {
+                    beginVictoryExit();
+                }
+                return;
+            }
+
+            if (isVictoryExit) {
+                ship.angle = 0;
+                ship.y -= 270 * dt;
+
+                // Tunggu sampai seluruh badan pesawat benar-benar keluar dari bagian atas layar.
+                if (ship.y + ship.height / 2 < -8) {
                     winGame();
                 }
                 return;
@@ -2260,7 +2383,7 @@
         }
 
         function gameLoop(timestamp) {
-            if (!['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) return;
+            if (!['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR', 'VICTORY_EXIT'].includes(gameState)) return;
 
             let dt = (timestamp - lastTime) / 1000;
             // Cap dt to prevent huge jumps if tab is inactive
@@ -2347,7 +2470,7 @@
         }
 
         function winGame() {
-            if (!['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR'].includes(gameState)) return;
+            if (!['PLAYING', 'VICTORY_PENDING', 'VICTORY_CLEAR', 'VICTORY_EXIT'].includes(gameState)) return;
             gameState = 'WIN';
             pendingWin = false;
             stopMusic();
