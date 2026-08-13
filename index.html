@@ -62,8 +62,19 @@
 
         /* === GLOBAL RESETS & TYPOGRAPHY === */
         * { box-sizing: border-box; }
+
+        html {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
         
         body {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             margin: 0;
             font-family: 'Outfit', sans-serif;
             background-color: var(--bg);
@@ -119,15 +130,48 @@
                 linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
             background-attachment: fixed;
             min-height: 100vh;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             padding: max(24px, env(safe-area-inset-top)) 0 max(24px, env(safe-area-inset-bottom));
         }
 
         .page-container {
-            width: min(100% - 40px, var(--max));
+            width: min(calc(100% - 40px), var(--max));
+            max-width: 100%;
+            min-width: 0;
             margin: 0 auto;
-            display: flex; flex-direction: column; flex: 1;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+
+        .topbar,
+        .hero,
+        .game-grid,
+        .game-card,
+        .game-info,
+        .future {
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .game-card,
+        .game-info > div {
+            min-width: 0;
+        }
+
+        .brand {
+            min-width: 0;
+        }
+
+        .brand-text,
+        .game-name,
+        .game-desc {
+            overflow-wrap: anywhere;
         }
 
         /* Header / Topbar */
@@ -391,16 +435,122 @@
         }
         
         /* Utility */
-        .hidden-start { opacity: 0; transform: scale(1.05); pointer-events: none; position: absolute; top:0; left:0; width: 100%; }
+        .hidden-start { opacity: 0; transform: none; pointer-events: none; position: absolute; top: 0; left: 0; width: 100%; max-width: 100%; }
 
         @media (max-width: 768px) {
-            .topbar { padding: 12px 16px; border-radius: 24px; }
+            #main-content {
+                min-height: 100dvh;
+                width: 100%;
+                max-width: 100%;
+                padding-left: 0;
+                padding-right: 0;
+                background-attachment: scroll;
+            }
+
+            .page-container {
+                width: calc(100% - 24px);
+                max-width: calc(100% - 24px);
+                min-width: 0;
+            }
+
+            .topbar {
+                width: 100%;
+                padding: 12px 16px;
+                border-radius: 24px;
+            }
+
+            .brand {
+                max-width: calc(100% - 58px);
+            }
+
+            .brand-text {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
             .section-note { display: none; }
-            .page-container { width: min(100% - 24px, var(--max)); }
-            .game-grid { grid-template-columns: 1fr; gap: 22px; }
-            .game-info { padding: 20px; align-items: center; }
-            .card-ornament { width: 70px; }
-            .hero-title { font-size: clamp(38px, 11vw, 58px) !important; }
+
+            .hero {
+                width: 100%;
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+
+            .hero-title {
+                width: 100%;
+                font-size: clamp(36px, 10vw, 54px) !important;
+                line-height: 1.04;
+            }
+
+            .hero p {
+                max-width: 100%;
+            }
+
+            .game-grid {
+                width: 100%;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 22px;
+            }
+
+            .game-card {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .game-visual {
+                width: 100%;
+            }
+
+            .game-info {
+                width: 100%;
+                min-width: 0;
+                padding: 20px;
+                align-items: center;
+            }
+
+            .card-ornament {
+                width: 70px;
+                flex: 0 0 70px;
+            }
+
+            .future {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .page-container {
+                width: calc(100% - 20px);
+                max-width: calc(100% - 20px);
+            }
+
+            .topbar {
+                padding: 10px 13px;
+            }
+
+            .brand-mark {
+                width: 40px;
+                height: 40px;
+            }
+
+            .theme-toggle {
+                width: 40px;
+                height: 40px;
+                flex: 0 0 40px;
+            }
+
+            .hero-title {
+                font-size: clamp(34px, 9.6vw, 46px) !important;
+            }
+
+            .game-info {
+                padding: 18px;
+            }
+
+            .game-name {
+                font-size: clamp(19px, 5.4vw, 23px);
+            }
         }
 
         @media (max-height: 560px) and (orientation: landscape) {
@@ -411,6 +561,13 @@
             .hero p { margin-top: 8px; }
             .section-head { margin-bottom: 14px; padding-bottom: 10px; }
         }
+
+        @supports (height: 100dvh) {
+            #splash-screen {
+                min-height: 100dvh;
+            }
+        }
+
     </style>
 </head>
 <body class="antialiased selection:bg-cyan-500/30 selection:text-cyan-50">
