@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#090d20" />
+  <meta name="description" content="Punch Pop: game kamera interaktif dengan MediaPipe Face & Hand Landmarker." />
+  <title>PUNCH POP! — Game Pukul Bola dengan Kamera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --text: #eef4ff;
+      --muted: #a5b1d7;
+      --cyan: #65e8ff;
+      --yellow: #ffda80;
+      --glass: rgba(15, 24, 55, .77);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body { background: #080e21; color: var(--text); }
+    button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible { outline: 3px solid #79e5ff; outline-offset: 3px; }
+    .app {
+      width: 100%; height: 100vh; height: 100dvh; min-height: 340px;
+      position: relative; overflow: hidden; isolation: isolate;
+      background: radial-gradient(ellipse at 50% 38%, #192858 0%, #0d1533 54%, #090e23 100%);
+    }
+    .app::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+      box-shadow: inset 0 0 170px rgba(2, 5, 21, .58);
+      background: linear-gradient(180deg, rgba(8,13,33,.61) 0%, transparent 25%, transparent 73%, rgba(8,13,33,.54) 100%);
+    }
+    .camera, .playfield { position: absolute; width: 100%; height: 100%; inset: 0; }
+    .camera {
+      object-fit: cover; transform: scaleX(-1); opacity: 0;
+      transition: opacity .35s ease; filter: saturate(.8) brightness(.8) contrast(1.03);
+      z-index: 0;
+    }
+    .app.camera-on .camera { opacity: 1; }
+    .playfield { z-index: 1; pointer-events: none; }
+    .topbar, .bottombar { position: absolute; z-index: 4; left: 0; width: 100%; display: flex; align-items: center; }
+    .topbar { top: 0; padding: max(18px, env(safe-area-inset-top)) 27px 10px; justify-content: space-between; gap: 16px; }
+    .branding { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .brand-logo {
+      flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, #72eaff, #7a80ff); box-shadow: 0 10px 32px #39caff37;
+      font-size: 22px; color: #101941;
+    }
+    .brand-name { font-size: clamp(15px, 1.9vw, 22px); font-weight: 800; letter-spacing: -.06em; line-height: 1; white-space: nowrap; }
+    .brand-name span { color: var(--cyan); }
+    .brand-sub { margin-top: 5px; color: #c0c9e6; font-size: 9px; font-weight: 800; letter-spacing: .19em; white-space: nowrap; }
+    .stats { display: flex; gap: 8px; align-items: center; justify-content: center; }
+    .stat {
+      height: 52px; min-width: 100px; padding: 7px 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 1px solid #d6ebff2b; background: rgba(10, 18, 44, .72); backdrop-filter: blur(18px); border-radius: 15px;
+      box-shadow: 0 10px 26px #03092316;
+    }
+    .stat-label { font-size: 9px; font-weight: 800; color: #c4cde8; letter-spacing: .15em; }
+    .stat-value { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; letter-spacing: -.07em; }
+    .stat-value.score { color: #73efff; }
+    .stat-value.time { color: #ffd581; }
+    .stat-value.life { font-size: 17px; color: #ff748d; letter-spacing: .04em; }
+    .header-buttons { display: flex; gap: 7px; }
+    .icon-btn {
+      width: 43px; height: 43px; display: grid; place-items: center; border-radius: 14px;
+      border: 1px solid #d6ebff34; color: #effaff; background: rgba(10,18,44,.78); backdrop-filter: blur(14px);
+      transition: background .12s; flex: none;
+    }
+    .icon-btn:hover { background: rgba(54,70,112,.85); }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .bottombar { bottom: 0; padding: 16px 27px max(18px, env(safe-area-inset-bottom)); justify-content: space-between; gap: 10px; }
+    .recognition { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .tracking {
+      display: flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid #d6ebff30;
+      border-radius: 30px; background: rgba(10,18,44,.8); backdrop-filter: blur(18px);
+      color: #c9d3ed; font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #7884a3; box-shadow: 0 0 0 3px #7884a326; }
+    .tracking.detected .dot { background: #67f0c5; box-shadow: 0 0 0 3px #67f0c529, 0 0 12px #67f0c5aa; }
+    .footer-hint {
+      color: #d7e5fd; font-size: 11px; font-weight: 600; background: #111b3caa; backdrop-filter: blur(9px);
+      padding: 10px 13px; border: 1px solid #a3d1ff22; border-radius: 22px;
+    }
+    .footer-hint strong { color: #7ff1ff; }
+    .toast {
+      position: absolute; left: 50%; top: 18%; z-index: 5; transform: translateX(-50%);
+      border: 1px solid #d4eeff52; color: #fff; background: rgba(22,31,68,.9); backdrop-filter: blur(15px);
+      border-radius: 24px; padding: 10px 18px; font-size: 13px; font-weight: 800;
+      text-align: center; pointer-events: none; opacity: 0; transition: opacity .14s;
+    }
+    .toast.show { opacity: 1; }
+    .overlay {
+      position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center;
+      padding: 102px 16px 99px; background: rgba(6, 10, 28, .56); backdrop-filter: blur(7px);
+    }
+    .overlay.hidden { display: none; }
+    .modal {
+      width: min(100%, 480px); max-height: 100%; overflow-y: auto; scrollbar-width: thin;
+      border-radius: 27px; padding: 27px 32px 29px;
+      border: 1px solid rgba(209,228,255,.23);
+      background: linear-gradient(155deg, rgba(31,43,86,.96), rgba(12,19,46,.98));
+      box-shadow: 0 24px 85px #0206179e, inset 0 1px rgba(255,255,255,.07); text-align: center;
+    }
+    .panel[hidden] { display: none !important; }
+    .hero-orb {
+      width: 108px; height: 108px; margin: 2px auto 19px; border-radius: 50%; display: grid; place-items: center;
+      background: radial-gradient(circle at 29% 23%, #fff 0%, #99f4ff 11%, #42bbff 46%, #5367de 100%);
+      box-shadow: inset -12px -15px 22px #112fc760, inset 11px 13px 19px #fff7, 0 12px 48px #42aeff6b;
+      border: 2px solid #b3e7ffaf; position: relative;
+    }
+    .hero-orb::after { content: ''; position: absolute; left: 19px; top: 16px; width: 43px; height: 19px; border-radius: 50%; background: #fff8; transform: rotate(-31deg); filter: blur(3px); }
+    .hero-orb svg { position: relative; z-index: 1; width: 47px; height: 47px; filter: drop-shadow(0 3px 7px #32469c94); }
+    .eyebrow { font-size: 11px; font-weight: 800; color: #7beaff; letter-spacing: .18em; }
+    h1, h2, p { margin: 0; }
+    h1, h2 { margin: 10px 0 12px; font-size: clamp(24px, 4vw, 36px); line-height: 1.16; font-weight: 800; letter-spacing: -.065em; }
+    h1 em { font-style: normal; color: var(--cyan); }
+    p.desc { font-size: 13px; line-height: 1.8; color: #c0cae5; max-width: 360px; margin: 0 auto 19px; }
+    .howto {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; text-align: center; margin: 17px 0 23px;
+    }
+    .howto div { border: 1px solid #d7eaff24; border-radius: 14px; padding: 11px 4px; font-size: 10px; color: #c9d3ec; font-weight: 700; line-height: 1.5; background: #0d1537ad; }
+    .howto b { display: block; font-size: 22px; margin-bottom: 4px; }
+    .primary {
+      width: 100%; min-height: 49px; padding: 12px 20px; background: linear-gradient(102deg, #62e4ff, #80a5ff);
+      border: none; border-radius: 15px; color: #0b1a38; font-size: 14px; font-weight: 800;
+      box-shadow: 0 13px 31px #2499fa32; transition: filter .12s;
+    }
+    .primary:hover { filter: brightness(1.11); }
+    .secondary {
+      width: 100%; min-height: 44px; margin-top: 9px; border-radius: 14px;
+      border: 1px solid #d0eaff37; background: #c7d7ff12; color: #e8f4ff; font-size: 13px; font-weight: 700;
+    }
+    .fine-print { margin-top: 13px; font-size: 10px; color: #9daad3; line-height: 1.6; }
+    .loader { width: 63px; height: 63px; border: 5px solid #cce8ff29; border-top-color: #80e9ff; border-radius: 50%; margin: 16px auto 25px; animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-message { color: #9ceeff; font-size: 13px; font-weight: 700; margin-top: 14px; }
+    .count { font-weight: 800; color: #fff; font-size: clamp(70px, 15vw, 125px); letter-spacing: -.09em; text-shadow: 0 5px 45px #77ddffb4; }
+    .end-score { font-size: 57px; line-height: 1.18; font-weight: 800; color: #7af0ff; letter-spacing: -.08em; }
+    .end-record { font-size: 12px; font-weight: 700; color: #ffdb8b; margin: 9px 0 22px; }
+    .small-symbol { font-size: 54px; margin: 4px auto 7px; }
+    .error-details { word-break: break-word; font-size: 12px; color: #ffcbcb; background: #ff6c7d16; border: 1px solid #ff82823c; border-radius: 12px; padding: 12px; line-height: 1.6; margin: 12px 0 18px; }
+    .progress-track { position: absolute; z-index: 4; left: 0; top: 0; right: 0; height: 3px; background: #121d42a6; }
+    .progress { height: 100%; background: linear-gradient(90deg,#7be7ff,#ffe3a0); transform-origin: left; transform: scaleX(1); transition: transform .1s linear; }
+    @media (max-width: 780px) {
+      .topbar { padding: max(12px, env(safe-area-inset-top)) 12px 6px; flex-wrap: wrap; gap: 8px; }
+      .brand-logo { width: 35px; height: 35px; border-radius: 11px; font-size: 19px; }
+      .brand-name { font-size: 17px; }
+      .brand-sub { font-size: 8px; }
+      .stats { order: 3; width: 100%; gap: 5px; }
+      .stat { flex: 1; height: 43px; min-width: 0; padding: 5px 7px; border-radius: 12px; }
+      .stat-value { font-size: 17px; }
+      .stat-value.life { font-size: 15px; }
+      .stat-label { font-size: 8px; }
+      .header-buttons { margin-left: auto; }
+      .icon-btn { width: 35px; height: 35px; border-radius: 11px; }
+      .icon-btn svg { width: 17px; height: 17px; }
+      .bottombar { padding: 8px 12px max(12px, env(safe-area-inset-bottom)); flex-direction: column; align-items: stretch; }
+      .recognition { gap: 6px; justify-content: center; }
+      .tracking { font-size: 10px; padding: 7px 10px; }
+      .footer-hint { align-self: center; text-align: center; font-size: 10px; padding: 7px 12px; }
+      .overlay { padding: 140px 13px 95px; }
+      .modal { padding: 21px 22px 23px; border-radius: 22px; }
+      .hero-orb { width: 77px; height: 77px; margin-bottom: 10px; }
+      .hero-orb svg { width: 37px; height: 37px; }
+      .hero-orb::after { width: 28px; height: 14px; left: 13px; top: 12px; }
+      h1, h2 { font-size: 26px; margin: 7px 0 9px; }
+      p.desc { font-size: 11px; margin-bottom: 13px; }
+      .howto { margin: 10px 0 15px; }
+      .howto div { padding: 7px 3px; font-size: 9px; }
+      .howto b { font-size: 17px; margin: 0; }
+      .primary { min-height: 44px; font-size: 12px; }
+      .fine-print { font-size: 9px; }
+      .toast { top: 23%; max-width: 90%; font-size: 11px; }
+    }
+    @media (max-height: 610px) and (min-width: 781px) {
+      .overlay { padding: 73px 14px 50px; }
+      .modal { padding: 14px 24px; }
+      .hero-orb { width: 65px; height: 65px; margin-bottom: 9px; }
+      .hero-orb svg { width: 34px; height: 34px; }
+      .howto { margin: 10px 0; }
+      .howto div { padding: 5px; }
+      h1, h2 { font-size: 27px; margin: 5px 0; }
+      p.desc { margin-bottom: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .loader { animation: none; } .camera, .icon-btn, .primary { transition: none; } }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <video id="video" class="camera" autoplay muted playsinline aria-label="Tampilan kamera langsung"></video>
+    <canvas id="canvas" class="playfield" aria-label="Area bermain bola"></canvas>
+    <div class="progress-track" aria-hidden="true"><div class="progress" id="progress"></div></div>
+
+    <header class="topbar">
+      <div class="branding" aria-label="Punch Pop">
+        <div class="brand-logo">✊</div>
+        <div><div class="brand-name">PUNCH <span>POP!</span></div><div class="brand-sub">FACE + HAND TRACKING</div></div>
+      </div>
+      <div class="stats" aria-label="Statistik permainan">
+        <div class="stat"><span class="stat-label">SKOR</span><span class="stat-value score" id="score">0</span></div>
+        <div class="stat"><span class="stat-label">WAKTU</span><span class="stat-value time" id="timer">01:00</span></div>
+        <div class="stat"><span class="stat-label">NYAWA</span><span class="stat-value life" id="lives">♥ ♥ ♥ ♥ ♥</span></div>
+      </div>
+      <div class="header-buttons">
+        <button id="btnSound" class="icon-btn" type="button" title="Aktif / nonaktif suara" aria-label="Matikan suara" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
+        </button>
+        <button id="btnCamera" class="icon-btn" type="button" title="Ganti kamera depan / belakang" aria-label="Ganti kamera" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 1 8.2 5.3L22 6v5h-5l1.6-1.6A7 7 0 0 0 5 12"/><path d="M12 21a9 9 0 0 1-8.2-5.3L2 18v-5h5l-1.6 1.6A7 7 0 0 0 19 12"/><circle cx="12" cy="12" r="2"/></svg>
+        </button>
+        <button id="btnPause" class="icon-btn" type="button" title="Jeda permainan" aria-label="Jeda permainan" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        </button>
+        <button id="btnStop" class="icon-btn" type="button" title="Tutup kamera / keluar permainan" aria-label="Tutup kamera" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5 19 19M19 5 5 19"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <footer class="bottombar">
+      <div class="recognition">
+        <div class="tracking" id="faceStatus"><span class="dot"></span><span id="faceText">Wajah: belum aktif</span></div>
+        <div class="tracking" id="handStatus"><span class="dot"></span><span id="handText">Tangan: belum aktif</span></div>
+      </div>
+      <div class="footer-hint"><strong>✊ KEPALKAN TANGAN</strong> lalu pukul bola yang turun!</div>
+    </footer>
+
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Menu permainan">
+      <div class="modal">
+        <section id="panelReady" class="panel">
+          <div class="hero-orb" aria-hidden="true"><svg viewBox="0 0 64 64"><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="39">👊</text></svg></div>
+          <div class="eyebrow">GAME INTERAKTIF DENGAN KAMERA</div>
+          <h1>Siap-siap <em>pukul bola!</em></h1>
+          <p class="desc">Kamera akan mendeteksi <strong>wajah &amp; kedua tanganmu</strong>. Kepalkan tangan, arahkan ke bola, dan pukul untuk membuatnya meledak!</p>
+          <div class="howto" aria-label="Cara bermain">
+            <div><b>📷</b>Izinkan akses<br/>kamera</div>
+            <div><b>✊</b>Angkat tangan<br/>dan pukul</div>
+            <div><b>✨</b>Pecahkan bola<br/>raih skor</div>
+          </div>
+          <button id="btnStart" class="primary" type="button">📷 &nbsp; AKTIFKAN KAMERA &amp; MAIN</button>
+          <div class="fine-print">60 detik • 5 nyawa • 2 tangan • Seluruh video diproses di perangkat</div>
+        </section>
+
+        <section id="panelLoading" class="panel" hidden>
+          <div class="loader" aria-hidden="true"></div>
+          <div class="eyebrow">MENYIAPKAN PERMAINAN</div>
+          <h2>Kamera &amp; AI sedang disiapkan</h2>
+          <p class="desc">Izinkan kamera jika browser meminta izin. Muat pertama kali membutuhkan koneksi internet untuk model MediaPipe.</p>
+          <div class="loading-message" id="loadingMessage">Meminta izin kamera...</div>
+        </section>
+
+        <section id="panelCountdown" class="panel" hidden>
+          <div class="eyebrow">BERSIAPLAH!</div>
+          <div class="count" id="countdownText">3</div>
+          <p class="desc">Posisikan wajah dan kedua tangan di depan kamera. Bola akan turun dari atas!</p>
+        </section>
+
+        <section id="panelPaused" class="panel" hidden>
+          <div class="small-symbol">⏸️</div>
+          <div class="eyebrow">PERMAINAN DIJEDA</div>
+          <h2>Mau lanjut?</h2>
+          <p class="desc">Angkat tanganmu lagi dan lanjutkan berburu bola.</p>
+          <button class="primary" id="btnResume" type="button">▶ &nbsp; LANJUTKAN BERMAIN</button>
+          <button class="secondary" id="btnQuitPause" type="button">Akhiri &amp; tutup kamera</button>
+        </section>
+
+        <section id="panelEnd" class="panel" hidden>
+          <div class="small-symbol" id="endIcon">🏆</div>
+          <div class="eyebrow" id="endReason">WAKTU HABIS!</div>
+          <h2>Permainan selesai!</h2>
+          <div class="end-score" id="finalScore">0</div>
+          <div class="end-record" id="finalRecord">Rekor terbaik: 0</div>
+          <button class="primary" id="btnAgain" type="button">🔄 &nbsp; MAIN LAGI</button>
+          <button class="secondary" id="btnQuitEnd" type="button">Tutup kamera</button>
+        </section>
+
+        <section id="panelError" class="panel" hidden>
+          <div class="small-symbol">⚠️</div>
+          <div class="eyebrow">TIDAK BISA MEMULAI</div>
+          <h2>Kamera belum tersedia</h2>
+          <p class="desc">Periksa izin kamera di browser, koneksi internet, dan pastikan halaman menggunakan HTTPS atau localhost.</p>
+          <div id="errorDetails" class="error-details"></div>
+          <button id="btnRetry" class="primary" type="button">↻ &nbsp; COBA LAGI</button>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // MediaPipe tidak memerlukan backend: inferensi berjalan langsung di browser.
+    // JS dan model pertama kali dimuat dari CDN; HTTPS diperlukan untuk izin kamera.
+    const MP_VERSION = '1.0.1';
+    const MP_CDN = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}`;
+    const HAND_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+    const FACE_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+
+    const $ = (id) => document.getElementById(id);
+    const app = $('app');
+    const video = $('video');
+    const canvas = $('canvas');
+    const ctx = canvas.getContext('2d', { alpha: true });
+    const overlay = $('overlay');
+    const ALL_PANELS = ['Ready', 'Loading', 'Countdown', 'Paused', 'End', 'Error'];
+
+    let phase = 'ready'; // ready | loading | countdown | playing | paused | ended | error
+    let stream = null;
+    let cameraFacing = 'user';
+    let handLandmarker = null;
+    let faceLandmarker = null;
+    let modelPromise = null;
+    let initBusy = false;
+    let soundOn = true;
+    let audioContext = null;
+    let W = 0, H = 0, DPR = 1;
+    let lastFrame = performance.now();
+    let lastHandAt = 0, lastFaceAt = 0, lastVideoTime = -1;
+    let lastFaceSeen = 0, lastHandsSeen = 0;
+    let faceData = null;
+    let hands = [];
+    let orbs = [], bursts = [], floaters = [], ripples = [];
+    let spawnWait = .5;
+    let game = { score: 0, lives: 5, elapsed: 0, combo: 0, lastPop: -10, popped: 0 };
+    let best = 0;
+    let countdownStarted = 0;
+    let toastUntil = 0;
+    let toastText = '';
+    let lastUiTime = -1;
+    let nextId = 1;
+    let audioMutedByVisibility = false;
+
+    try { best = Number(localStorage.getItem('punch-pop-record') || 0) || 0; } catch (_) {}
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const now = () => performance.now();
+
+    function panel(name) {
+      ALL_PANELS.forEach(p => { $('panel' + p).hidden = p.toLowerCase() !== name.toLowerCase(); });
+      overlay.classList.toggle('hidden', name === 'none');
+      if (name !== 'none') overlay.setAttribute('aria-label', 'Menu permainan ' + name);
+    }
+    function resize() {
+      const oldW = W || 1, oldH = H || 1;
+      W = app.clientWidth; H = app.clientHeight;
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(W * DPR);
+      canvas.height = Math.round(H * DPR);
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      if (oldW !== 1) {
+        for (const orb of orbs) { orb.x *= W / oldW; orb.y *= H / oldH; }
+        for (const h of hands) { h.x *= W / oldW; h.y *= H / oldH; }
+      }
+    }
+    window.addEventListener('resize', resize, { passive: true });
+    resize();
+
+    function updateHud(force = false) {
+      $('score').textContent = game.score.toLocaleString('id-ID');
+      const left = Math.max(0, Math.ceil(60 - game.elapsed));
+      if (force || left !== lastUiTime) {
+        $('timer').textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+        lastUiTime = left;
+      }
+      $('lives').textContent = '♥ '.repeat(Math.max(0, game.lives)).trim() || '—';
+      $('progress').style.transform = 'scaleX(' + clamp(1 - game.elapsed / 60, 0, 1) + ')';
+    }
+    function updateTracking() {
+      const time = now();
+      const faceFound = Boolean(stream && faceData && time - lastFaceSeen < 900);
+      const handFound = Boolean(stream && hands.length && time - lastHandsSeen < 900);
+      $('faceStatus').classList.toggle('detected', faceFound);
+      $('handStatus').classList.toggle('detected', handFound);
+      $('faceText').textContent = !stream ? 'Wajah: belum aktif' : faceFound ? 'Wajah: terdeteksi ✓' : 'Wajah: mencari...';
+      $('handText').textContent = !stream ? 'Tangan: belum aktif' : handFound ? `Tangan: ${hands.length} terdeteksi ✓` : 'Tangan: mencari...';
+    }
+    function message(text, duration = 1500) {
+      toastText = text;
+      toastUntil = now() + duration;
+      $('toast').textContent = text;
+      $('toast').classList.add('show');
+    }
+    function setButtons() {
+      const available = Boolean(stream);
+      $('btnCamera').disabled = !available || initBusy;
+      $('btnPause').disabled = !available || !['playing','paused'].includes(phase);
+      $('btnStop').disabled = !available || initBusy;
+      $('btnPause').title = phase === 'paused' ? 'Lanjutkan permainan' : 'Jeda permainan';
+      $('btnPause').setAttribute('aria-label', $('btnPause').title);
+      $('btnPause').innerHTML = phase === 'paused'
+        ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5a1 1 0 0 1 1.5-.85l11 7a1 1 0 0 1 0 1.7l-11 7A1 1 0 0 1 7 18.5z"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    }
+
+    function initAudio() {
+      if (!soundOn) return;
+      try {
+        audioContext ??= new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') void audioContext.resume();
+      } catch (_) { /* Game tetap dapat dimainkan tanpa audio. */ }
+    }
+    function tone(freq, duration = .11, type = 'sine', volume = .075, slide = 0) {
+      if (!soundOn || !audioContext || audioMutedByVisibility) return;
+      try {
+        const at = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(Math.max(50, freq), at);
+        if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(55, freq + slide), at + duration);
+        gain.gain.setValueAtTime(volume, at);
+        gain.gain.exponentialRampToValueAtTime(.0001, at + duration);
+        osc.connect(gain).connect(audioContext.destination);
+        osc.start(at); osc.stop(at + duration + .015);
+      } catch (_) {}
+    }
+    function playPop(gold = false) {
+      tone(gold ? 700 : 415, .14, 'sine', .12, gold ? 650 : 290);
+      tone(gold ? 970 : 150, .085, 'triangle', .052, gold ? 340 : -70);
+    }
+    function playMiss() { tone(210, .19, 'triangle', .075, -110); }
+
+    async function openCamera(facing = cameraFacing) {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Browser tidak mendukung akses kamera. Buka dari HTTPS atau localhost.');
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      video.pause(); video.srcObject = null;
+      let newStream;
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: facing }, width: { ideal: 960 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }
+        });
+      } catch (err) {
+        // Beberapa kamera menolak preferensi resolusi. Coba setelan dasar.
+        if (['OverconstrainedError', 'NotFoundError'].includes(err.name)) {
+          newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } else { throw err; }
+      }
+      stream = newStream;
+      video.srcObject = stream;
+      await new Promise((resolve, reject) => {
+        if (video.readyState >= 2) return resolve();
+        let done = false;
+        const timer = setTimeout(() => { if (!done) { done = true; reject(new Error('Kamera tidak mengirim gambar. Coba tutup aplikasi lain yang menggunakan kamera.')); } }, 12000);
+        video.addEventListener('loadeddata', () => { if (!done) { done = true; clearTimeout(timer); resolve(); } }, { once: true });
+      });
+      await video.play();
+      lastVideoTime = -1; lastHandAt = 0; lastFaceAt = 0;
+      app.classList.add('camera-on');
+      updateTracking();
+    }
+
+    async function loadModels() {
+      if (handLandmarker && faceLandmarker) return;
+      if (modelPromise) return modelPromise;
+      modelPromise = (async () => {
+        $('loadingMessage').textContent = 'Mengunduh pustaka MediaPipe...';
+        const { FilesetResolver, HandLandmarker, FaceLandmarker } = await import(`${MP_CDN}/vision_bundle.mjs`);
+        const vision = await FilesetResolver.forVisionTasks(`${MP_CDN}/wasm`);
+        async function createWithFallback(Type, opts) {
+          try { return await Type.createFromOptions(vision, { ...opts, baseOptions: { ...opts.baseOptions, delegate: 'GPU' } }); }
+          catch (gpuError) { console.warn('MediaPipe GPU tidak tersedia, memakai CPU:', gpuError.message); return Type.createFromOptions(vision, { ...opts, baseOptions: { ...opts.baseOptions, delegate: 'CPU' } }); }
+        }
+        if (!handLandmarker) {
+          $('loadingMessage').textContent = 'Memuat model pendeteksi dua tangan...';
+          handLandmarker = await createWithFallback(HandLandmarker, {
+            baseOptions: { modelAssetPath: HAND_MODEL },
+            runningMode: 'VIDEO', numHands: 2,
+            minHandDetectionConfidence: .5, minHandPresenceConfidence: .48, minTrackingConfidence: .48
+          });
+        }
+        if (!faceLandmarker) {
+          $('loadingMessage').textContent = 'Memuat model pendeteksi wajah...';
+          faceLandmarker = await createWithFallback(FaceLandmarker, {
+            baseOptions: { modelAssetPath: FACE_MODEL },
+            runningMode: 'VIDEO', numFaces: 1,
+            minFaceDetectionConfidence: .5, minFacePresenceConfidence: .5, minTrackingConfidence: .5
+          });
+        }
+      })();
+      try { await modelPromise; } finally { modelPromise = null; }
+    }
+
+    async function start() {
+      if (initBusy) return;
+      initAudio();
+      initBusy = true;
+      phase = 'loading'; panel('Loading'); setButtons();
+      try {
+        $('loadingMessage').textContent = 'Meminta izin kamera...';
+        if (!stream) await openCamera(cameraFacing);
+        await loadModels();
+        $('loadingMessage').textContent = 'Siap bermain!';
+        initBusy = false;
+        startCountdown();
+      } catch (err) {
+        console.error(err);
+        stopCamera();
+        initBusy = false;
+        phase = 'error';
+        const reason = err?.name === 'NotAllowedError' ? 'Izin kamera ditolak. Izinkan akses kamera melalui ikon pengaturan situs pada browser.'
+          : err?.name === 'NotReadableError' ? 'Kamera sedang digunakan aplikasi lain atau gagal dibuka.'
+          : err?.message || 'Terjadi gangguan saat mengakses kamera / memuat MediaPipe.';
+        $('errorDetails').textContent = reason;
+        panel('Error'); setButtons();
+      }
+    }
+    function startCountdown() {
+      game = { score: 0, lives: 5, elapsed: 0, combo: 0, lastPop: -10, popped: 0 };
+      orbs = []; bursts = []; floaters = []; ripples = []; spawnWait = .55;
+      countdownStarted = now();
+      phase = 'countdown';
+      $('countdownText').textContent = '3';
+      updateHud(true); panel('Countdown'); setButtons();
+      tone(550, .08);
+    }
+    function beginRound() {
+      phase = 'playing'; panel('none'); setButtons();
+      message('✊ PUKUL BOLANYA!', 1250);
+      tone(780, .16, 'triangle', .09, 410);
+    }
+    function pause() {
+      if (phase === 'playing') { phase = 'paused'; panel('Paused'); setButtons(); }
+      else if (phase === 'paused') { phase = 'playing'; panel('none'); lastFrame = now(); setButtons(); }
+    }
+    function finish(outOfLives = false) {
+      if (phase !== 'playing') return;
+      phase = 'ended';
+      $('endReason').textContent = outOfLives ? 'NYAWA HABIS!' : 'WAKTU HABIS!';
+      $('endIcon').textContent = outOfLives ? '💫' : '🏆';
+      $('finalScore').textContent = game.score.toLocaleString('id-ID');
+      if (game.score > best) {
+        best = game.score;
+        try { localStorage.setItem('punch-pop-record', String(best)); } catch (_) {}
+        $('finalRecord').textContent = '✨ REKOR BARU! ' + best.toLocaleString('id-ID');
+      } else { $('finalRecord').textContent = 'Rekor terbaik: ' + best.toLocaleString('id-ID'); }
+      panel('End'); setButtons();
+      tone(440, .4, 'triangle', .045, -180);
+    }
+    function stopCamera() {
+      if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+      video.pause(); video.srcObject = null;
+      app.classList.remove('camera-on');
+      hands = []; faceData = null; lastHandsSeen = 0; lastFaceSeen = 0;
+      updateTracking();
+    }
+    function quit() {
+      if (initBusy) return;
+      stopCamera();
+      phase = 'ready'; orbs = []; bursts = []; floaters = []; ripples = [];
+      game = { score: 0, lives: 5, elapsed: 0, combo: 0, lastPop: -10, popped: 0 };
+      updateHud(true); panel('Ready'); setButtons();
+    }
+
+    function videoToScreen(pt) {
+      if (!video.videoWidth || !video.videoHeight) return { x: W/2, y: H/2 };
+      // Sama dengan CSS object-fit:cover + mirror scaleX(-1).
+      const sc = Math.max(W / video.videoWidth, H / video.videoHeight);
+      const ox = (W - video.videoWidth * sc) / 2;
+      const oy = (H - video.videoHeight * sc) / 2;
+      return { x: ox + (1 - pt.x) * video.videoWidth * sc,
+               y: oy + pt.y * video.videoHeight * sc };
+    }
+    const HAND_EDGES = [
+      [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
+      [5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],
+      [13,17],[17,18],[18,19],[19,20],[0,17]
+    ];
+    function readHands(result, ts) {
+      const resultHands = result?.landmarks || [];
+      const prevHands = hands;
+      const used = new Set();
+      const fresh = [];
+      for (let i = 0; i < resultHands.length; i++) {
+        const lm = resultHands[i];
+        const points = lm.map(videoToScreen);
+        // Posisi kepalan: pusat buku jari telunjuk sampai kelingking.
+        const knuckles = [5,9,13,17];
+        const point = {
+          x: knuckles.reduce((s, ix) => s + points[ix].x, 0) / 4,
+          y: knuckles.reduce((s, ix) => s + points[ix].y, 0) / 4
+        };
+        const palmSpan = Math.hypot(points[5].x - points[17].x, points[5].y - points[17].y);
+        // Jari dianggap terlipat apabila ujung jari lebih dekat ke buku jari daripada segmen pangkal.
+        const folded = [[8,5,6],[12,9,10],[16,13,14],[20,17,18]].filter(([tip,mcp,pip]) =>
+          Math.hypot(points[tip].x-points[mcp].x,points[tip].y-points[mcp].y) <
+          Math.hypot(points[pip].x-points[mcp].x,points[pip].y-points[mcp].y)*1.55
+        ).length;
+        const isFist = folded >= 2;
+        // Pertahankan identitas tangan berdasarkan jarak untuk menghindari perubahan urutan tangan.
+        let old = null, oldIndex = -1, minDist = Infinity;
+        for (let j = 0; j < prevHands.length; j++) {
+          if (used.has(j)) continue;
+          const d = Math.hypot(point.x-prevHands[j].x, point.y-prevHands[j].y);
+          if (d < minDist) { minDist = d; old = prevHands[j]; oldIndex = j; }
+        }
+        if (old && minDist < Math.max(175, W*.19)) used.add(oldIndex);
+        else old = null;
+        const dt = old ? Math.max(.025, Math.min(.20, (ts-old.ts)/1000)) : 0;
+        const rawSpeed = dt ? Math.hypot(point.x-old.x, point.y-old.y)/dt : 0;
+        const speed = old ? old.speed * .25 + rawSpeed * .75 : 0;
+        fresh.push({ x: point.x, y: point.y, oldX: old?.x ?? point.x, oldY: old?.y ?? point.y,
+          ts, speed, isFist, palmSpan, points, radius: clamp(palmSpan*.64, 19, 55),
+          color: i ? '#ffd89c' : '#7cf1ff', cooldown: old?.cooldown ?? 0 });
+      }
+      hands = fresh;
+      if (fresh.length) lastHandsSeen = ts;
+    }
+    function readFace(result, ts) {
+      const lm = result?.faceLandmarks?.[0];
+      if (!lm) { faceData = null; return; }
+      const forehead = videoToScreen(lm[10]);
+      const chin = videoToScreen(lm[152]);
+      const left = videoToScreen(lm[234]);
+      const right = videoToScreen(lm[454]);
+      const nose = videoToScreen(lm[1]);
+      faceData = { x: nose.x, y: (forehead.y+chin.y)/2,
+        rx: Math.abs(left.x-right.x)*.66, ry: Math.abs(forehead.y-chin.y)*.63 };
+      lastFaceSeen = ts;
+    }
+    function detect(ts) {
+      if (!stream || !handLandmarker || !faceLandmarker || video.readyState < 2) return;
+      if (video.currentTime === lastVideoTime) return;
+      lastVideoTime = video.currentTime;
+      // Tangan sekitar 22 FPS, wajah sekitar 6 FPS agar perangkat lebih ringan.
+      try {
+        if (ts - lastHandAt > 45) {
+          readHands(handLandmarker.detectForVideo(video, ts), ts);
+          lastHandAt = ts;
+        }
+        if (ts - lastFaceAt > 160) {
+          readFace(faceLandmarker.detectForVideo(video, ts), ts);
+          lastFaceAt = ts;
+        }
+      } catch (err) {
+        console.warn('Satu frame pendeteksian dilewati:', err);
+        // Kegagalan satu frame tidak membuat game berhenti permanen.
+      }
+    }
+    const COLORS = [
+      { light:'#d3fbff', mid:'#4bdcff', dark:'#3174f1', points:10 },
+      { light:'#f5d7ff', mid:'#bc78ff', dark:'#773bcd', points:10 },
+      { light:'#c9ffe7', mid:'#48e4b1', dark:'#118c96', points:10 },
+      { light:'#ffdff4', mid:'#ff79bb', dark:'#cb3e7e', points:10 },
+      { light:'#fffad4', mid:'#ffdd62', dark:'#e69a16', points:30, gold:true }
+    ];
+    function spawnOrb() {
+      if (orbs.length >= 11) return;
+      const scale = clamp(W/950, .7, 1.1);
+      const color = Math.random() < .13 ? COLORS[4] : COLORS[Math.floor(Math.random()*4)];
+      const r = rand(35, 50)*scale;
+      const leftLimit = r + 15;
+      const rightLimit = Math.max(leftLimit, W-r-15);
+      orbs.push({
+        id: nextId++, x: rand(leftLimit, rightLimit), y: -r-10, r, style: color,
+        velocity: (rand(105, 160)+game.elapsed*.8)*clamp(H/780, .78, 1.22),
+        drift: rand(-22, 22), phase: rand(0, Math.PI*2), spin: rand(-1,1), angle: 0
+      });
+    }
+    function pop(orb, x, y, ts) {
+      const index = orbs.indexOf(orb);
+      if (index < 0) return;
+      orbs.splice(index, 1);
+      game.combo = ts-game.lastPop < 1900 ? Math.min(game.combo+1, 6) : 1;
+      game.lastPop = ts;
+      const score = orb.style.points * (game.combo >= 3 ? 2 : 1);
+      game.score += score;
+      game.popped++;
+      const count = 16 + (orb.style.gold ? 10 : 0);
+      for (let i=0; i<count; i++) {
+        const a = i/count*Math.PI*2 + rand(-.17,.17), s = rand(85, 360);
+        bursts.push({x:orb.x, y:orb.y, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
+          color:i%3 === 0 ? '#fff' : i%2 ? orb.style.mid : orb.style.light,
+          life:rand(.4,.83),max:.83,size:rand(3,8),rot:rand(0,6),spin:rand(-9,9)});
+      }
+      ripples.push({x:orb.x,y:orb.y,r:orb.r*.28,life:.28,max:.28,color:orb.style.mid});
+      floaters.push({x:orb.x,y:orb.y,life:.79,max:.79,text:'+'+score,color:orb.style.gold?'#ffe179':'#eaffff'});
+      playPop(Boolean(orb.style.gold));
+      updateHud();
+      if (game.combo === 3) message('🔥 KOMBO x2!', 900);
+      if (orb.style.gold) message('🌟 BOLA EMAS +'+score, 950);
+    }
+    function distSegment(px, py, x1, y1, x2, y2) {
+      const dx=x2-x1, dy=y2-y1;
+      const t=clamp(((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1),0,1);
+      return Math.hypot(px-x1-t*dx,py-y1-t*dy);
+    }
+    function checkPunches(ts) {
+      if (!hands.length || !orbs.length) return;
+      for (const hand of hands) {
+        const punchReady = (hand.isFist && hand.speed > 65) || hand.speed > 230;
+        if (!punchReady || hand.cooldown > ts) continue;
+        for (let j=orbs.length-1; j>=0; j--) {
+          const orb=orbs[j];
+          if (distSegment(orb.x,orb.y,hand.oldX,hand.oldY,hand.x,hand.y) <= orb.r + hand.radius*.7) {
+            pop(orb, hand.x, hand.y, ts);
+            hand.cooldown = ts + 130;
+            break;
+          }
+        }
+      }
+    }
+    function updateGame(dt, ts) {
+      game.elapsed += dt;
+      if (game.elapsed >= 60) { game.elapsed = 60; updateHud(); finish(); return; }
+      spawnWait -= dt;
+      if (spawnWait <= 0) {
+        spawnOrb();
+        spawnWait += Math.max(.48, 1.05-game.elapsed*.007) * rand(.8,1.23);
+      }
+      for (let i=orbs.length-1; i>=0; i--) {
+        const orb = orbs[i];
+        orb.y += orb.velocity*dt;
+        orb.x += (orb.drift+Math.sin(game.elapsed*2.2+orb.phase)*17)*dt;
+        orb.x = clamp(orb.x, orb.r+2, W-orb.r-2);
+        orb.angle += orb.spin*dt;
+        if (orb.y-orb.r > H) {
+          orbs.splice(i,1);
+          game.combo=0;
+          game.lives--;
+          playMiss();
+          updateHud();
+          if (game.lives <= 0) { game.lives = 0; updateHud(); finish(true); return; }
+          if (game.lives <= 2) message('⚠️ JANGAN LEWATKAN BOLANYA!', 930);
+        }
+      }
+      checkPunches(ts);
+      updateHud();
+    }
+    function updateEffects(dt) {
+      for (let i=bursts.length-1;i>=0;i--) {
+        const p=bursts[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=480*dt;
+        p.vx*=Math.exp(-dt*1.1);p.rot+=p.spin*dt;
+        if(p.life<=0)bursts.splice(i,1);
+      }
+      for(let i=floaters.length-1;i>=0;i--){const p=floaters[i];p.life-=dt;p.y-=50*dt;if(p.life<=0)floaters.splice(i,1);}
+      for(let i=ripples.length-1;i>=0;i--){const p=ripples[i];p.life-=dt;p.r+=380*dt;if(p.life<=0)ripples.splice(i,1);}
+    }
+    function drawBackdrop(t) {
+      ctx.save();
+      ctx.strokeStyle='rgba(168,222,255,.065)';ctx.lineWidth=1;
+      const step=64, ox=(t*7)%step;
+      for(let x=ox; x<W; x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+      for(let y=0;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      // Sudut bingkai seperti HUD arcade.
+      ctx.strokeStyle='rgba(117,213,255,.3)';ctx.lineWidth=2;
+      const k=24, m=19;
+      for (const [x,y,dx,dy] of [[m,m,1,1],[W-m,m,-1,1],[m,H-m,1,-1],[W-m,H-m,-1,-1]]) {
+        ctx.beginPath();ctx.moveTo(x+dx*k,y);ctx.lineTo(x,y);ctx.lineTo(x,y+dy*k);ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function drawOrb(o, t) {
+      const bob = Math.sin(t*2.4+o.phase)*2;
+      const x = o.x, y=o.y+bob, r=o.r;
+      ctx.save();ctx.translate(x,y);ctx.rotate(o.angle*.14);
+      ctx.shadowColor=o.style.mid;ctx.shadowBlur=24;
+      const grad=ctx.createRadialGradient(-r*.35,-r*.4,r*.07, 0,0,r*1.1);
+      grad.addColorStop(0,o.style.light);grad.addColorStop(.22,o.style.mid);grad.addColorStop(.75,o.style.mid);grad.addColorStop(1,o.style.dark);
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();ctx.shadowBlur=0;
+      ctx.strokeStyle='#efffff9c';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.save();ctx.translate(-r*.31,-r*.37);ctx.rotate(-.55);
+      ctx.beginPath();ctx.ellipse(0,0,r*.35,r*.16,0,0,Math.PI*2);ctx.fillStyle='#ffffff8a';ctx.fill();ctx.restore();
+      ctx.globalAlpha=.24;ctx.beginPath();ctx.arc(r*.15,r*.15,r*.66,.23,1.7);ctx.lineWidth=r*.13;ctx.strokeStyle='#06336e';ctx.stroke();ctx.globalAlpha=1;
+      if(o.style.gold){ctx.font=`800 ${Math.round(r*.75)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.shadowBlur=10;ctx.shadowColor='#ffaf3e';ctx.fillText('★',0,1);}
+      else { ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(r*.5,-r*.45,r*.1,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill(); }
+      ctx.restore();
+    }
+    function drawFace() {
+      if(!faceData || now()-lastFaceSeen>900) return;
+      const f=faceData;
+      ctx.save();ctx.strokeStyle='#83eaffc7';ctx.lineWidth=2;
+      ctx.setLineDash([8,8]);ctx.beginPath();ctx.ellipse(f.x,f.y,Math.max(25,f.rx),Math.max(35,f.ry),0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      const bx=f.x-Math.max(25,f.rx),by=f.y-Math.max(35,f.ry)-12;
+      ctx.fillStyle='#a4f6ff';ctx.font='800 10px "Plus Jakarta Sans",sans-serif';ctx.textAlign='left';
+      ctx.shadowColor='#56e0ff';ctx.shadowBlur=10;ctx.fillText('● FACE LOCK',bx,by);ctx.restore();
+    }
+    function drawHand(hand, t) {
+      ctx.save();
+      ctx.strokeStyle=hand.color+'d4';ctx.lineWidth=2.7;ctx.lineJoin='round';ctx.lineCap='round';
+      ctx.shadowColor=hand.color;ctx.shadowBlur=8;
+      for(const [a,b] of HAND_EDGES){ctx.beginPath();ctx.moveTo(hand.points[a].x,hand.points[a].y);ctx.lineTo(hand.points[b].x,hand.points[b].y);ctx.stroke();}
+      ctx.shadowBlur=0;
+      ctx.fillStyle=hand.color;
+      for(const ix of [0,4,8,12,16,20]){ctx.beginPath();ctx.arc(hand.points[ix].x,hand.points[ix].y,3.4,0,Math.PI*2);ctx.fill();}
+      const r=hand.radius+4+Math.sin(t*6)*3;
+      ctx.beginPath();ctx.arc(hand.x,hand.y,r,0,Math.PI*2);
+      ctx.strokeStyle=hand.isFist ? '#ffeb9c' : hand.color;
+      ctx.lineWidth=hand.isFist ? 3 : 2;ctx.setLineDash([6,6]);ctx.stroke();ctx.setLineDash([]);
+      ctx.beginPath();ctx.arc(hand.x,hand.y,6,0,Math.PI*2);
+      ctx.fillStyle=hand.isFist?'#ffe39a':hand.color;ctx.fill();
+      ctx.textAlign='center';ctx.font='800 10px "Plus Jakarta Sans",sans-serif';ctx.fillStyle='#f5fbff';
+      ctx.shadowBlur=8;ctx.shadowColor='#0a183b';ctx.fillText(hand.isFist?'✊ SIAP PUKUL':'✋ GERAKKAN TANGAN',hand.x,hand.y-r-13);
+      ctx.restore();
+    }
+    function drawEffects() {
+      for(const s of ripples){ctx.save();ctx.globalAlpha=s.life/s.max;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.strokeStyle=s.color;ctx.lineWidth=5;ctx.shadowBlur=15;ctx.shadowColor=s.color;ctx.stroke();ctx.restore();}
+      for(const p of bursts){ctx.save();ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.color;ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*.65);ctx.restore();}
+      for(const p of floaters){ctx.save();ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.font='800 28px "Plus Jakarta Sans",sans-serif';ctx.textAlign='center';ctx.shadowColor=p.color;ctx.shadowBlur=18;ctx.fillStyle=p.color;ctx.fillText(p.text,p.x,p.y);ctx.restore();}
+    }
+    function tick(ts) {
+      const dt=Math.min(.05,Math.max(0,(ts-lastFrame)/1000));
+      lastFrame=ts;
+      detect(ts);
+      if(phase==='countdown') {
+        const passed=(ts-countdownStarted)/1000;
+        const shown=Math.max(1,3-Math.floor(passed));
+        if ($('countdownText').textContent !== String(shown)) {
+          $('countdownText').textContent=String(shown);tone(530+shown*70,.08);
+        }
+        if(passed>=3) beginRound();
+      }
+      if(phase==='playing') updateGame(dt,ts);
+      if(phase==='playing'||phase==='ended') updateEffects(dt);
+      ctx.clearRect(0,0,W,H);
+      drawBackdrop(ts/1000);
+      if (stream) drawFace();
+      for(const orb of orbs)drawOrb(orb,ts/1000);
+      if(stream) for(const hand of hands) drawHand(hand,ts/1000);
+      drawEffects();
+      if(toastUntil < ts && toastText){ toastText='';$('toast').classList.remove('show'); }
+      if(ts%1000<35) updateTracking();
+      requestAnimationFrame(tick);
+    }
+
+    $('btnStart').addEventListener('click', start);
+    $('btnRetry').addEventListener('click', start);
+    $('btnAgain').addEventListener('click', () => { initAudio(); startCountdown(); });
+    $('btnResume').addEventListener('click', pause);
+    $('btnPause').addEventListener('click', pause);
+    $('btnStop').addEventListener('click', quit);
+    $('btnQuitPause').addEventListener('click', quit);
+    $('btnQuitEnd').addEventListener('click', quit);
+    $('btnSound').addEventListener('click', () => {
+      soundOn=!soundOn;
+      if(soundOn)initAudio();
+      const mute = !soundOn;
+      $('btnSound').setAttribute('aria-pressed',String(mute));
+      $('btnSound').setAttribute('aria-label',mute?'Aktifkan suara':'Matikan suara');
+      $('btnSound').querySelector('.sound-wave').style.display=mute?'none':'';
+      message(mute?'🔇 Suara dimatikan':'🔊 Suara diaktifkan',950);
+    });
+    $('btnCamera').addEventListener('click', async () => {
+      if (!stream||initBusy)return;
+      const wasPlaying=phase==='playing';
+      if(wasPlaying) pause();
+      initBusy=true;setButtons();
+      const previous=cameraFacing;
+      const target=previous==='user'?'environment':'user';
+      try { await openCamera(target); cameraFacing=target; message('📷 Kamera diganti',1200); }
+      catch(err) {
+        console.warn('Gagal beralih kamera:',err);
+        message('⚠️ Kamera lain tidak tersedia',1800);
+        try { await openCamera(previous); } catch (_) { quit(); }
+      }
+      initBusy=false;
+      setButtons();
+      // Pergantian kamera tidak otomatis melanjutkan waktu agar pemain bisa bersiap.
+    });
+    window.addEventListener('keydown', e => {
+      if((e.code==='Space'||e.code==='Escape')&&!['ready','loading','error'].includes(phase)){
+        if(['playing','paused'].includes(phase)){e.preventDefault();pause();}
+      }
+    });
+    document.addEventListener('visibilitychange',()=>{
+      audioMutedByVisibility=document.hidden;
+      if(document.hidden&&phase==='playing')pause();
+    });
+    window.addEventListener('pagehide',stopCamera);
+    updateHud(true);updateTracking();setButtons();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

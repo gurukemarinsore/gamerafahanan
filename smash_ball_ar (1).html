@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Smash Ball AR - AI Wajah & Tangan</title>
+  
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Audio Engine (Tone.js) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  
+  <!-- MediaPipe Pose v0.5 (Cepat, Ringan ~3MB, Mendeteksi Wajah & Kedua Tangan Sekaligus) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@600;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background-color: #080c14;
+      color: #f3f4f6;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .font-hud {
+      font-family: 'Orbitron', monospace;
+    }
+
+    /* Efek Glow & Arcade Neon */
+    .glow-cyan {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.45);
+    }
+    .glow-magenta {
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.45);
+    }
+    .glow-text-cyan {
+      text-shadow: 0 0 8px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+    .glow-text-gold {
+      text-shadow: 0 0 10px rgba(234, 179, 8, 0.8), 0 0 20px rgba(234, 179, 8, 0.4);
+    }
+
+    /* Efek Screen Shake saat memukul */
+    @keyframes screenShake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-5px, 4px); }
+      40% { transform: translate(5px, -4px); }
+      60% { transform: translate(-3px, 2px); }
+      80% { transform: translate(3px, -2px); }
+      100% { transform: translate(0, 0); }
+    }
+    .shake {
+      animation: screenShake 0.16s ease-out;
+    }
+
+    .arcade-grid {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-between arcade-grid relative p-2 md:p-3">
+
+  <!-- HUD Atas -->
+  <header class="w-full max-w-5xl flex items-center justify-between z-20 py-1">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 md:p-2.5 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 shadow-lg glow-cyan flex items-center justify-center">
+        <i class="fa-solid fa-hand-fist text-white text-lg md:text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-lg md:text-2xl font-hud font-bold tracking-wider text-cyan-400 glow-text-cyan flex items-center gap-2">
+          SMASH BALL <span class="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full font-sans">AR POSE</span>
+        </h1>
+        <p class="text-[11px] text-gray-400 hidden sm:block">Pukul dengan tangan atau sundul bola dengan kepala!</p>
+      </div>
+    </div>
+
+    <!-- Skor & Kombo -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <div class="bg-gray-900/90 backdrop-blur border border-cyan-500/40 px-3 py-1 md:py-1.5 rounded-xl text-center min-w-[75px] md:min-w-[90px]">
+        <span class="text-[9px] md:text-[10px] tracking-wider text-gray-400 block font-hud">SKOR</span>
+        <span id="scoreText" class="font-hud text-lg md:text-2xl font-bold text-yellow-400 glow-text-gold">0</span>
+      </div>
+
+      <div class="bg-gray-900/90 backdrop-blur border border-pink-500/40 px-3 py-1 md:py-1.5 rounded-xl text-center min-w-[70px] md:min-w-[80px]">
+        <span class="text-[9px] md:text-[10px] tracking-wider text-gray-400 block font-hud">KOMBO</span>
+        <span id="comboText" class="font-hud text-lg md:text-2xl font-bold text-pink-400">x1</span>
+      </div>
+
+      <div class="bg-gray-900/90 backdrop-blur border border-emerald-500/40 px-3 py-1 md:py-1.5 rounded-xl text-center hidden md:block min-w-[90px]">
+        <span class="text-[10px] tracking-wider text-gray-400 block font-hud">TERBAIK</span>
+        <span id="highScoreText" class="font-hud text-xl font-bold text-emerald-400">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Area Canvas Game -->
+  <main id="gameContainer" class="relative w-full flex-1 max-w-5xl my-1 flex items-center justify-center overflow-hidden rounded-2xl border border-cyan-500/30 bg-black/80 shadow-2xl">
+    
+    <!-- Video Element (Hidden feed dari Webcam) -->
+    <video id="webcamVideo" class="hidden" playsinline muted autoplay></video>
+
+    <!-- Canvas Tempat Render Game & Kamera Mirrored -->
+    <canvas id="gameCanvas" class="w-full h-full object-cover block cursor-crosshair"></canvas>
+
+    <!-- Live Diagnostics Banner (Menunjukkan Status Deteksi Nyata) -->
+    <div id="diagnosticsBar" class="absolute top-2 left-2 right-2 flex flex-wrap items-center justify-between gap-1 text-[11px] font-mono bg-black/70 backdrop-blur border border-gray-800 px-3 py-1.5 rounded-lg z-20 pointer-events-none">
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1.5">
+          <span id="camDot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+          <span id="camLabel" class="text-gray-300">Kamera: Siap</span>
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span id="aiDot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+          <span id="aiLabel" class="text-gray-400">Model: Mengunduh</span>
+        </span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="headStatusBadge" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]">KEPALA: -</span>
+        <span id="handStatusBadge" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]">TANGAN: -</span>
+        <span id="fpsBadge" class="text-gray-500 hidden sm:inline">60 FPS</span>
+      </div>
+    </div>
+
+    <!-- Start & Permission Modal -->
+    <div id="startOverlay" class="absolute inset-0 bg-gray-950/90 backdrop-blur-md flex flex-col items-center justify-center z-30 p-5 text-center transition-all duration-300">
+      <div class="max-w-md w-full flex flex-col items-center space-y-5">
+        <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center glow-cyan">
+          <i class="fa-solid fa-camera-retro text-cyan-400 text-3xl"></i>
+        </div>
+
+        <div>
+          <h2 class="font-hud text-2xl md:text-3xl font-extrabold text-white tracking-wider glow-text-cyan">
+            SMASH BALL AR
+          </h2>
+          <p class="text-gray-300 text-xs md:text-sm mt-1.5 leading-relaxed">
+            Pukul bola dengan <span class="text-pink-400 font-bold">Tangan Kiri / Kanan</span> atau sundul dengan <span class="text-cyan-400 font-bold">Wajah/Kepala</span> Anda di depan kamera!
+          </p>
+        </div>
+
+        <!-- Instruksi Simbol -->
+        <div class="grid grid-cols-3 gap-2 w-full text-center text-xs">
+          <div class="p-2.5 bg-gray-900/90 rounded-xl border border-gray-800">
+            <i class="fa-solid fa-hand text-pink-400 text-lg mb-1 block"></i>
+            <span class="text-gray-200 font-semibold text-[11px] block">Pukulan Tangan</span>
+            <span class="text-gray-400 text-[9px]">Ayunkan tangan</span>
+          </div>
+          <div class="p-2.5 bg-gray-900/90 rounded-xl border border-gray-800">
+            <i class="fa-solid fa-head-side-virus text-cyan-400 text-lg mb-1 block"></i>
+            <span class="text-gray-200 font-semibold text-[11px] block">Sundulan Kepala</span>
+            <span class="text-gray-400 text-[9px]">Sundul bola tengah</span>
+          </div>
+          <div class="p-2.5 bg-gray-900/90 rounded-xl border border-gray-800">
+            <i class="fa-solid fa-bomb text-red-400 text-lg mb-1 block"></i>
+            <span class="text-gray-200 font-semibold text-[11px] block">Hindari Bom</span>
+            <span class="text-gray-400 text-[9px]">Kurangi skor</span>
+          </div>
+        </div>
+
+        <!-- Status & Pesan Log -->
+        <div id="statusMessageBox" class="w-full text-left text-xs bg-gray-900/90 p-3 rounded-xl border border-gray-800 text-gray-300 space-y-1">
+          <div class="flex items-center gap-2 text-cyan-400 font-semibold">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Status Sistem:</span>
+          </div>
+          <p id="statusDetailText" class="text-gray-400 text-[11px]">
+            Klik tombol di bawah untuk mengizinkan akses kamera dan mengaktifkan deteksi AI.
+          </p>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="w-full space-y-2">
+          <button id="btnStartGame" class="w-full py-3.5 px-6 rounded-xl font-hud font-bold text-base bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-xl glow-cyan active:scale-95 transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-play"></i>
+            <span>AKTIFKAN KAMERA & MAIN</span>
+          </button>
+          
+          <button id="btnPlayTouch" class="w-full py-2 px-4 rounded-xl text-xs font-semibold bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-arrow-pointer text-cyan-400"></i>
+            <span>Mainkan Langsung dengan Sentuhan / Mouse (Tanpa Kamera)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Banner Notifikasi -->
+    <div id="gameNotification" class="absolute top-12 pointer-events-none opacity-0 transition-opacity duration-200 z-20">
+      <span id="notificationText" class="font-hud font-bold text-lg px-4 py-1 rounded-full bg-cyan-950/90 border border-cyan-400 text-cyan-200 shadow-xl">
+        SMASH!
+      </span>
+    </div>
+
+  </main>
+
+  <!-- Footer Kontrol -->
+  <footer class="w-full max-w-5xl flex items-center justify-between text-xs text-gray-400 py-1 z-20">
+    <div class="flex items-center gap-2">
+      <button id="btnToggleSound" class="px-2.5 py-1.5 bg-gray-900/90 border border-gray-700 hover:border-gray-500 rounded-lg text-gray-300 transition flex items-center gap-1.5">
+        <i id="soundIcon" class="fa-solid fa-volume-high text-cyan-400"></i>
+        <span class="hidden sm:inline">Suara</span>
+      </button>
+
+      <button id="btnToggleTrackingView" class="px-2.5 py-1.5 bg-gray-900/90 border border-gray-700 hover:border-gray-500 rounded-lg text-gray-300 transition flex items-center gap-1.5">
+        <i class="fa-solid fa-crosshairs text-pink-400"></i>
+        <span>Sensor: On</span>
+      </button>
+
+      <button id="btnResetScore" class="px-2.5 py-1.5 bg-gray-900/90 border border-gray-700 hover:border-gray-500 rounded-lg text-gray-300 transition flex items-center gap-1.5">
+        <i class="fa-solid fa-rotate-right text-yellow-400"></i>
+        <span>Reset</span>
+      </button>
+
+      <button id="btnFullscreen" class="px-2.5 py-1.5 bg-gray-900/90 border border-cyan-500/40 hover:border-cyan-400 rounded-lg text-cyan-300 hover:text-white transition flex items-center gap-1.5 shadow-sm">
+        <i id="fsIcon" class="fa-solid fa-expand"></i>
+        <span>Fullscreen</span>
+      </button>
+    </div>
+
+    <div class="flex items-center gap-2 text-[11px] text-gray-400">
+      <span class="hidden sm:inline">Sentuh/Klik juga bisa memecahkan bola!</span>
+      <button id="btnRestartCam" class="px-2 py-1 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 rounded text-cyan-300 transition flex items-center gap-1">
+        <i class="fa-solid fa-arrows-rotate"></i>
+        <span>Kamera Ulang</span>
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    // Konfigurasi Game
+    const CONFIG = {
+      ballSpawnRate: 1000,
+      ballMinSpeed: 2.4,
+      ballMaxSpeed: 4.8,
+      punchRadius: 52,     // Radius deteksi pukulan tangan
+      headRadius: 62,      // Radius deteksi sundulan kepala
+      maxBalls: 12
+    };
+
+    const state = {
+      score: 0,
+      combo: 1,
+      comboTimer: null,
+      highScore: parseInt(localStorage.getItem('smash_ball_highscore') || '0', 10),
+      isPlaying: false,
+      soundEnabled: true,
+      showTrackingMesh: true,
+      cameraActive: false,
+      modelReady: false,
+      lastSpawnTime: 0,
+      mouseHitbox: null,
+      touchHitbox: null
+    };
+
+    // Tracking Hitboxes (Wajah & Tangan)
+    const trackedHitboxes = {
+      head: null,      // { x, y, radius, label }
+      leftHand: null,  // { x, y, radius, label }
+      rightHand: null  // { x, y, radius, label }
+    };
+
+    let balls = [];
+    let particles = [];
+    let floatingTexts = [];
+
+    // DOM References
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameContainer = document.getElementById('gameContainer');
+    const startOverlay = document.getElementById('startOverlay');
+    const btnStartGame = document.getElementById('btnStartGame');
+    const btnPlayTouch = document.getElementById('btnPlayTouch');
+    const statusDetailText = document.getElementById('statusDetailText');
+    const scoreText = document.getElementById('scoreText');
+    const comboText = document.getElementById('comboText');
+    const highScoreText = document.getElementById('highScoreText');
+    const camDot = document.getElementById('camDot');
+    const camLabel = document.getElementById('camLabel');
+    const aiDot = document.getElementById('aiDot');
+    const aiLabel = document.getElementById('aiLabel');
+    const headStatusBadge = document.getElementById('headStatusBadge');
+    const handStatusBadge = document.getElementById('handStatusBadge');
+    const fpsBadge = document.getElementById('fpsBadge');
+    const btnToggleSound = document.getElementById('btnToggleSound');
+    const soundIcon = document.getElementById('soundIcon');
+    const btnToggleTrackingView = document.getElementById('btnToggleTrackingView');
+    const btnResetScore = document.getElementById('btnResetScore');
+    const btnRestartCam = document.getElementById('btnRestartCam');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+    const fsIcon = document.getElementById('fsIcon');
+
+    highScoreText.textContent = state.highScore;
+
+    let audioInitialized = false;
+    let smashSynth, comboSynth, bombSynth;
+
+    function initAudio() {
+      if (audioInitialized) return;
+      try {
+        Tone.start();
+
+        smashSynth = new Tone.MembraneSynth({
+          pitchDecay: 0.04,
+          octaves: 4,
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }
+        }).toDestination();
+        smashSynth.volume.value = -3;
+
+        comboSynth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.005, decay: 0.12, sustain: 0, release: 0.1 }
+        }).toDestination();
+        comboSynth.volume.value = -6;
+
+        bombSynth = new Tone.NoiseSynth({
+          noise: { type: 'white' },
+          envelope: { attack: 0.005, decay: 0.3, sustain: 0 }
+        }).toDestination();
+        bombSynth.volume.value = -2;
+
+        audioInitialized = true;
+      } catch (e) {
+        console.warn('Tone.js audio fallback:', e);
+      }
+    }
+
+    function playSound(type) {
+      if (!state.soundEnabled || !audioInitialized) return;
+      try {
+        if (type === 'bomb') {
+          bombSynth.triggerAttackRelease('16n');
+        } else if (type === 'gold') {
+          comboSynth.triggerAttackRelease(['E5', 'G#5', 'B5'], '16n');
+        } else {
+          const notes = ['C3', 'E3', 'G3', 'A3', 'C4', 'E4'];
+          const picked = notes[Math.min(state.combo, notes.length - 1)];
+          smashSynth.triggerAttackRelease(picked, '16n');
+        }
+      } catch (e) {}
+    }
+
+    const BALL_TYPES = {
+      BLUE: { color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.8)', points: 10, isBomb: false, radius: 36, label: '' },
+      PINK: { color: '#ec4899', glow: 'rgba(236, 72, 153, 0.8)', points: 15, isBomb: false, radius: 38, label: '' },
+      GOLD: { color: '#eab308', glow: 'rgba(234, 179, 8, 0.95)', points: 40, isBomb: false, radius: 32, label: '★' },
+      BOMB: { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.95)', points: -25, isBomb: true, radius: 40, label: '💣' }
+    };
+
+    class Ball {
+      constructor(w, h) {
+        this.w = w;
+        this.h = h;
+        
+        const rand = Math.random();
+        if (rand < 0.45) {
+          this.type = BALL_TYPES.BLUE;
+        } else if (rand < 0.75) {
+          this.type = BALL_TYPES.PINK;
+        } else if (rand < 0.88) {
+          this.type = BALL_TYPES.GOLD;
+        } else {
+          this.type = BALL_TYPES.BOMB;
+        }
+
+        this.radius = this.type.radius;
+        this.x = this.radius + Math.random() * (w - this.radius * 2);
+        this.y = -this.radius - Math.random() * 30;
+        
+        this.vy = CONFIG.ballMinSpeed + Math.random() * (CONFIG.ballMaxSpeed - CONFIG.ballMinSpeed);
+        this.vx = (Math.random() - 0.5) * 1.6;
+        this.wobble = Math.random() * Math.PI * 2;
+        this.wobbleSpeed = 0.03 + Math.random() * 0.04;
+        this.rotation = 0;
+        this.isDead = false;
+      }
+
+      update() {
+        this.y += this.vy;
+        this.wobble += this.wobbleSpeed;
+        this.x += Math.sin(this.wobble) * 1.3 + this.vx;
+        this.rotation += 0.02;
+
+        if (this.y - this.radius > this.h) {
+          this.isDead = true;
+          if (!this.type.isBomb && state.isPlaying) {
+            resetCombo();
+          }
+        }
+      }
+
+      draw(c) {
+        c.save();
+        c.translate(this.x, this.y);
+        c.rotate(this.rotation);
+
+        c.shadowColor = this.type.glow;
+        c.shadowBlur = 18;
+
+        const grad = c.createRadialGradient(-this.radius * 0.3, -this.radius * 0.3, this.radius * 0.1, 0, 0, this.radius);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.35, this.type.color);
+        grad.addColorStop(1, '#05070e');
+
+        c.beginPath();
+        c.arc(0, 0, this.radius, 0, Math.PI * 2);
+        c.fillStyle = grad;
+        c.fill();
+
+        c.lineWidth = 2.5;
+        c.strokeStyle = '#ffffff';
+        c.stroke();
+
+        if (this.type.label) {
+          c.shadowBlur = 0;
+          c.fillStyle = '#ffffff';
+          c.font = `bold ${this.radius * 0.9}px sans-serif`;
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(this.type.label, 0, 1);
+        }
+
+        c.restore();
+      }
+    }
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2.5 + Math.random() * 8.5;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.radius = 3 + Math.random() * 5;
+        this.alpha = 1;
+        this.decay = 0.03 + Math.random() * 0.035;
+        this.gravity = 0.16;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.alpha -= this.decay;
+        this.radius = Math.max(0, this.radius - 0.08);
+      }
+
+      draw(c) {
+        if (this.alpha <= 0) return;
+        c.save();
+        c.globalAlpha = this.alpha;
+        c.fillStyle = this.color;
+        c.shadowColor = this.color;
+        c.shadowBlur = 8;
+        c.beginPath();
+        c.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        c.fill();
+        c.restore();
+      }
+    }
+
+    class FloatingText {
+      constructor(text, x, y, color) {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vy = -2.2;
+        this.alpha = 1;
+        this.scale = 1.25;
+      }
+
+      update() {
+        this.y += this.vy;
+        this.alpha -= 0.025;
+        this.scale = Math.max(1, this.scale - 0.012);
+      }
+
+      draw(c) {
+        if (this.alpha <= 0) return;
+        c.save();
+        c.globalAlpha = this.alpha;
+        c.font = `bold ${Math.round(20 * this.scale)}px 'Orbitron', monospace`;
+        c.fillStyle = this.color;
+        c.shadowColor = this.color;
+        c.shadowBlur = 10;
+        c.textAlign = 'center';
+        c.fillText(this.text, this.x, this.y);
+        c.restore();
+      }
+    }
+
+    function triggerExplosion(x, y, color, count = 22) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+      gameContainer.classList.add('shake');
+      setTimeout(() => gameContainer.classList.remove('shake'), 150);
+    }
+
+    function addScorePopup(text, x, y, color) {
+      floatingTexts.push(new FloatingText(text, x, y, color));
+    }
+
+    function addScore(points) {
+      if (points > 0) {
+        const total = points * state.combo;
+        state.score += total;
+        state.combo++;
+        
+        clearTimeout(state.comboTimer);
+        state.comboTimer = setTimeout(() => resetCombo(), 2000);
+      } else {
+        state.score = Math.max(0, state.score + points);
+        resetCombo();
+      }
+
+      scoreText.textContent = state.score;
+      comboText.textContent = `x${state.combo}`;
+
+      if (state.score > state.highScore) {
+        state.highScore = state.score;
+        highScoreText.textContent = state.highScore;
+        localStorage.setItem('smash_ball_highscore', state.highScore.toString());
+      }
+    }
+
+    function resetCombo() {
+      state.combo = 1;
+      comboText.textContent = 'x1';
+    }
+
+    function processHits() {
+      const targets = [];
+
+      // Kepala / Sundulan
+      if (trackedHitboxes.head) {
+        targets.push({
+          x: trackedHitboxes.head.x,
+          y: trackedHitboxes.head.y,
+          radius: CONFIG.headRadius,
+          type: 'SUNDUL KEPALA'
+        });
+      }
+
+      // Tangan Kiri
+      if (trackedHitboxes.leftHand) {
+        targets.push({
+          x: trackedHitboxes.leftHand.x,
+          y: trackedHitboxes.leftHand.y,
+          radius: CONFIG.punchRadius,
+          type: 'TINJU KIRI'
+        });
+      }
+
+      // Tangan Kanan
+      if (trackedHitboxes.rightHand) {
+        targets.push({
+          x: trackedHitboxes.rightHand.x,
+          y: trackedHitboxes.rightHand.y,
+          radius: CONFIG.punchRadius,
+          type: 'TINJU KANAN'
+        });
+      }
+
+      // Fallback Mouse/Touch Hitbox jika aktif
+      if (state.mouseHitbox) {
+        targets.push({
+          x: state.mouseHitbox.x,
+          y: state.mouseHitbox.y,
+          radius: 45,
+          type: 'SENTUH'
+        });
+      }
+
+      if (targets.length === 0) return;
+
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const ball = balls[i];
+        if (ball.isDead) continue;
+
+        for (const t of targets) {
+          const dx = ball.x - t.x;
+          const dy = ball.y - t.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < ball.radius + t.radius) {
+            ball.isDead = true;
+
+            if (ball.type.isBomb) {
+              triggerExplosion(ball.x, ball.y, '#ef4444', 32);
+              playSound('bomb');
+              addScore(ball.type.points);
+              addScorePopup(`${ball.type.points} BOM!`, ball.x, ball.y, '#ef4444');
+            } else {
+              const isGold = ball.type === BALL_TYPES.GOLD;
+              triggerExplosion(ball.x, ball.y, ball.type.color, isGold ? 32 : 20);
+              playSound(isGold ? 'gold' : 'normal');
+              addScore(ball.type.points);
+
+              const bonusStr = state.combo > 2 ? ` x${state.combo - 1}` : '';
+              const label = isGold ? `+${ball.type.points * (state.combo - 1)} GOLD!` : `+${ball.type.points * (state.combo - 1)}${bonusStr}`;
+              addScorePopup(label, ball.x, ball.y, ball.type.color);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    function drawReticles(c) {
+      if (!state.showTrackingMesh) return;
+
+      // 1. Gambar Reticle Kepala
+      if (trackedHitboxes.head) {
+        const h = trackedHitboxes.head;
+        c.save();
+        c.strokeStyle = '#00f0ff';
+        c.lineWidth = 2.5;
+        c.setLineDash([5, 5]);
+        c.shadowColor = '#00f0ff';
+        c.shadowBlur = 14;
+
+        c.beginPath();
+        c.arc(h.x, h.y, CONFIG.headRadius, 0, Math.PI * 2);
+        c.stroke();
+
+        c.setLineDash([]);
+        c.fillStyle = '#00f0ff';
+        c.beginPath();
+        c.arc(h.x, h.y, 6, 0, Math.PI * 2);
+        c.fill();
+
+        c.font = 'bold 11px Orbitron';
+        c.fillStyle = '#67e8f9';
+        c.textAlign = 'center';
+        c.fillText('SUNDUL', h.x, h.y - CONFIG.headRadius - 6);
+        c.restore();
+      }
+
+      // 2. Gambar Reticle Tinju Tangan
+      const hands = [
+        { item: trackedHitboxes.leftHand, color: '#f43f5e', label: 'TANGAN KIRI' },
+        { item: trackedHitboxes.rightHand, color: '#f43f5e', label: 'TANGAN KANAN' }
+      ];
+
+      for (const hand of hands) {
+        if (!hand.item) continue;
+        const p = hand.item;
+        c.save();
+        c.shadowColor = hand.color;
+        c.shadowBlur = 18;
+
+        // Cincin luar
+        c.strokeStyle = hand.color;
+        c.lineWidth = 3;
+        c.beginPath();
+        c.arc(p.x, p.y, CONFIG.punchRadius, 0, Math.PI * 2);
+        c.stroke();
+
+        // Lingkaran dalam bersinar
+        const fistGrad = c.createRadialGradient(p.x, p.y, 2, p.x, p.y, CONFIG.punchRadius);
+        fistGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        fistGrad.addColorStop(0.5, 'rgba(244, 63, 94, 0.4)');
+        fistGrad.addColorStop(1, 'rgba(244, 63, 94, 0)');
+        c.fillStyle = fistGrad;
+        c.beginPath();
+        c.arc(p.x, p.y, CONFIG.punchRadius, 0, Math.PI * 2);
+        c.fill();
+
+        c.font = 'bold 11px Orbitron';
+        c.fillStyle = '#fecdd3';
+        c.textAlign = 'center';
+        c.fillText(hand.label, p.x, p.y - CONFIG.punchRadius - 6);
+        c.restore();
+      }
+
+      // 3. Gambar Cursor/Touch jika ada
+      if (state.mouseHitbox) {
+        const m = state.mouseHitbox;
+        c.save();
+        c.strokeStyle = '#eab308';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.arc(m.x, m.y, 45, 0, Math.PI * 2);
+        c.stroke();
+        c.restore();
+      }
+    }
+
+    let lastLoopTime = performance.now();
+    let frameCount = 0;
+    let lastFpsUpdate = performance.now();
+
+    function gameLoop(now) {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Hitung FPS
+      frameCount++;
+      if (now - lastFpsUpdate > 1000) {
+        fpsBadge.textContent = `${frameCount} FPS`;
+        frameCount = 0;
+        lastFpsUpdate = now;
+      }
+
+      // 1. Gambar Feed Video (Mode Cermin/Mirror)
+      ctx.save();
+      ctx.clearRect(0, 0, w, h);
+
+      if (state.cameraActive && video.readyState >= 2) {
+        ctx.save();
+        // Balik horizontal agar seperti cermin alami
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, w, h);
+        ctx.restore();
+
+        // Lapisan gelap agar kontras game tetap nyaman
+        ctx.fillStyle = 'rgba(8, 12, 20, 0.55)';
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        ctx.fillStyle = '#080c14';
+        ctx.fillRect(0, 0, w, h);
+      }
+      ctx.restore();
+
+      // 2. Logika Permainan
+      if (state.isPlaying) {
+        if (now - state.lastSpawnTime > CONFIG.ballSpawnRate && balls.length < CONFIG.maxBalls) {
+          balls.push(new Ball(w, h));
+          state.lastSpawnTime = now;
+          CONFIG.ballSpawnRate = Math.max(600, 1000 - Math.floor(state.score / 50) * 35);
+        }
+
+        // Cek Pukulan / Tabrakan
+        processHits();
+      }
+
+      // 3. Render Bola
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        b.update();
+        b.draw(ctx);
+        if (b.isDead) balls.splice(i, 1);
+      }
+
+      // 4. Render Partikel
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw(ctx);
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+
+      // 5. Render Teks Melayang
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.update();
+        ft.draw(ctx);
+        if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+      }
+
+      // 6. Gambar Reticle / Hitbox Wajah & Tangan
+      drawReticles(ctx);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function resizeCanvas() {
+      const rect = gameContainer.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width);
+      canvas.height = Math.floor(rect.height);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    let pose = null;
+    let isProcessingFrame = false;
+
+    function onPoseResults(results) {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      if (!results.poseLandmarks) {
+        trackedHitboxes.head = null;
+        trackedHitboxes.leftHand = null;
+        trackedHitboxes.rightHand = null;
+        headStatusBadge.className = 'px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]';
+        headStatusBadge.textContent = 'KEPALA: TIDAK ADA';
+        handStatusBadge.className = 'px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]';
+        handStatusBadge.textContent = 'TANGAN: TIDAK ADA';
+        return;
+      }
+
+      const lm = results.poseLandmarks;
+
+      // 1. Deteksi Wajah / Kepala (Landmark 0 = Hidung, Landmark 2,5 = Mata)
+      const nose = lm[0];
+      if (nose && (nose.visibility === undefined || nose.visibility > 0.4)) {
+        // Karena video dicerminkan (mirrored), koordinat x dibalik: (1 - x)
+        trackedHitboxes.head = {
+          x: (1 - nose.x) * w,
+          y: nose.y * h
+        };
+        headStatusBadge.className = 'px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold';
+        headStatusBadge.textContent = 'KEPALA: OK';
+      } else {
+        trackedHitboxes.head = null;
+        headStatusBadge.className = 'px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]';
+        headStatusBadge.textContent = 'KEPALA: -';
+      }
+
+      // 2. Deteksi Tangan Kiri (Landmark 19 = Jari Telunjuk Kiri, 15 = Pergelangan Kiri)
+      // Catatan: Pada Pose, landmark sisi kiri adalah tangan kiri tubuh pemain
+      const leftHandPoint = (lm[19] && lm[19].visibility > 0.3) ? lm[19] : lm[15];
+      if (leftHandPoint && (leftHandPoint.visibility === undefined || leftHandPoint.visibility > 0.3)) {
+        trackedHitboxes.leftHand = {
+          x: (1 - leftHandPoint.x) * w,
+          y: leftHandPoint.y * h
+        };
+      } else {
+        trackedHitboxes.leftHand = null;
+      }
+
+      // 3. Deteksi Tangan Kanan (Landmark 20 = Jari Telunjuk Kanan, 16 = Pergelangan Kanan)
+      const rightHandPoint = (lm[20] && lm[20].visibility > 0.3) ? lm[20] : lm[16];
+      if (rightHandPoint && (rightHandPoint.visibility === undefined || rightHandPoint.visibility > 0.3)) {
+        trackedHitboxes.rightHand = {
+          x: (1 - rightHandPoint.x) * w,
+          y: rightHandPoint.y * h
+        };
+      } else {
+        trackedHitboxes.rightHand = null;
+      }
+
+      // Update badge status tangan
+      if (trackedHitboxes.leftHand && trackedHitboxes.rightHand) {
+        handStatusBadge.className = 'px-1.5 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-500/40 text-[10px] font-bold';
+        handStatusBadge.textContent = 'TANGAN: KIRI & KANAN';
+      } else if (trackedHitboxes.leftHand || trackedHitboxes.rightHand) {
+        handStatusBadge.className = 'px-1.5 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-500/40 text-[10px] font-bold';
+        handStatusBadge.textContent = trackedHitboxes.leftHand ? 'TANGAN: KIRI' : 'TANGAN: KANAN';
+      } else {
+        handStatusBadge.className = 'px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]';
+        handStatusBadge.textContent = 'TANGAN: -';
+      }
+    }
+
+    async function videoProcessingLoop() {
+      if (pose && video.readyState >= 2 && !video.paused && !video.ended && video.videoWidth > 0) {
+        if (!isProcessingFrame) {
+          isProcessingFrame = true;
+          try {
+            await pose.send({ image: video });
+          } catch (e) {
+            console.warn('Pose process error:', e);
+          } finally {
+            isProcessingFrame = false;
+          }
+        }
+      }
+      requestAnimationFrame(videoProcessingLoop);
+    }
+
+    async function setupCameraAndPose() {
+      statusDetailText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Meminta izin webcam dan menyalakan kamera...';
+      
+      try {
+        // 1. Meminta Stream Kamera Resolusi Ideal 640x480 (Ringan & Cepat)
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            video.play().then(resolve).catch(resolve);
+          };
+        });
+
+        state.cameraActive = true;
+        camDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-sm';
+        camLabel.textContent = `Kamera: Aktif (${video.videoWidth}x${video.videoHeight})`;
+
+        statusDetailText.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengunduh model AI MediaPipe Pose Lite...';
+        aiDot.className = 'w-2 h-2 rounded-full bg-yellow-400 animate-pulse';
+        aiLabel.textContent = 'Model: Memuat...';
+
+        // 2. Inisialisasi MediaPipe Pose (Model Lite: Cepat & Sangat Ringan)
+        pose = new Pose({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`
+        });
+
+        pose.setOptions({
+          modelComplexity: 0, // 0 = Lite (Cepat & lancar), 1 = Full
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          minDetectionConfidence: 0.35,
+          minTrackingConfidence: 0.35
+        });
+
+        pose.onResults(onPoseResults);
+
+        // Uji inisialisasi awal
+        await pose.send({ image: video });
+
+        state.modelReady = true;
+        aiDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-sm';
+        aiLabel.textContent = 'Model: Siap';
+
+        // Mulai loop pemrosesan video independen
+        videoProcessingLoop();
+
+        // Sembunyikan modal dan mulai game
+        startOverlay.classList.add('opacity-0', 'pointer-events-none');
+        state.isPlaying = true;
+        state.lastSpawnTime = performance.now();
+
+      } catch (err) {
+        console.error('Kamera / AI Error:', err);
+        camDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        camLabel.textContent = 'Kamera: Gagal';
+        aiDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        aiLabel.textContent = 'Model: Error';
+
+        statusDetailText.innerHTML = `
+          <div class="text-rose-400">
+            <strong>Gagal mengaktifkan kamera:</strong> ${err.message || 'Izin ditolak atau browser tidak mengizinkan webcam'}.<br>
+            <span class="text-gray-300">Tips: Pastikan klik 'Izinkan' kamera di address bar browser, atau klik tombol <em>'Mainkan Langsung dengan Sentuhan'</em> di bawah.</span>
+          </div>
+        `;
+      }
+    }
+
+    btnStartGame.addEventListener('click', () => {
+      initAudio();
+      setupCameraAndPose();
+    });
+
+    btnPlayTouch.addEventListener('click', () => {
+      initAudio();
+      startOverlay.classList.add('opacity-0', 'pointer-events-none');
+      state.isPlaying = true;
+      state.lastSpawnTime = performance.now();
+      camLabel.textContent = 'Mode Sentuh/Mouse Aktif';
+    });
+
+    // Touch & Mouse Smash Interaction
+    function handlePointerHit(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      state.mouseHitbox = {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+
+      // Hapus hitbox virtual setelah pukulan
+      setTimeout(() => {
+        state.mouseHitbox = null;
+      }, 120);
+    }
+
+    canvas.addEventListener('mousedown', handlePointerHit);
+    canvas.addEventListener('touchstart', (e) => {
+      handlePointerHit(e);
+    }, { passive: true });
+
+    // Tombol Toggle Sound
+    btnToggleSound.addEventListener('click', () => {
+      initAudio();
+      state.soundEnabled = !state.soundEnabled;
+      if (state.soundEnabled) {
+        soundIcon.className = 'fa-solid fa-volume-high text-cyan-400';
+      } else {
+        soundIcon.className = 'fa-solid fa-volume-xmark text-gray-500';
+      }
+    });
+
+    // Tombol Toggle Sensor Visual
+    btnToggleTrackingView.addEventListener('click', () => {
+      state.showTrackingMesh = !state.showTrackingMesh;
+      btnToggleTrackingView.querySelector('span').textContent = 
+        state.showTrackingMesh ? 'Sensor: On' : 'Sensor: Off';
+    });
+
+    // Reset Skor
+    btnResetScore.addEventListener('click', () => {
+      state.score = 0;
+      state.combo = 1;
+      scoreText.textContent = '0';
+      comboText.textContent = 'x1';
+      balls = [];
+      particles = [];
+      floatingTexts = [];
+    });
+
+    // Restart Kamera
+    btnRestartCam.addEventListener('click', () => {
+      if (state.cameraActive && video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+      }
+      setupCameraAndPose();
+    });
+
+    // Toggle Mode Layar Penuh (Fullscreen)
+    function toggleFullscreen() {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const root = document.documentElement;
+        if (root.requestFullscreen) {
+          root.requestFullscreen().catch(() => {});
+        } else if (root.webkitRequestFullscreen) {
+          root.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+
+    btnFullscreen.addEventListener('click', toggleFullscreen);
+
+    // Deteksi perubahan status fullscreen & update ikon + ukuran kanvas
+    function handleFullscreenChange() {
+      const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (fsIcon) {
+        fsIcon.className = isFullscreen ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+      }
+      const label = btnFullscreen.querySelector('span');
+      if (label) {
+        label.textContent = isFullscreen ? 'Keluar Fullscreen' : 'Fullscreen';
+      }
+      // Re-kalkulasi ukuran canvas agar presisi memenuhi layar
+      setTimeout(resizeCanvas, 150);
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    // Pintasan keyboard: Tekan tombol 'F' untuk toggle Fullscreen
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      resizeCanvas();
+      requestAnimationFrame(gameLoop);
+    });
+  </script>
+</body>
+</html>
