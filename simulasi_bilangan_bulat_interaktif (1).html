@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Petualangan Bilangan Bulat - Simulasi Interaktif Matematika</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js CDN for Web Audio FX -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['Fredoka', 'sans-serif'],
+          },
+          colors: {
+            pos: {
+              DEFAULT: '#059669',
+              light: '#d1fae5',
+              border: '#34d399',
+              dark: '#065f46'
+            },
+            neg: {
+              DEFAULT: '#e11d48',
+              light: '#ffe4e6',
+              border: '#fb7185',
+              dark: '#9f1239'
+            },
+            neutralVal: {
+              DEFAULT: '#475569',
+              light: '#f1f5f9'
+            }
+          },
+          boxShadow: {
+            'comic': '0 4px 0 0 rgba(0,0,0,0.15)',
+            'comic-lg': '0 6px 0 0 rgba(0,0,0,0.18)',
+            'comic-pressed': '0 1px 0 0 rgba(0,0,0,0.2)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Keyframe animations */
+    @keyframes floatBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    @keyframes cancelPair {
+      0% { transform: scale(1); opacity: 1; }
+      40% { transform: scale(1.2) rotate(10deg); filter: brightness(1.3); }
+      100% { transform: scale(0); opacity: 0; height: 0; margin: 0; padding: 0; }
+    }
+    .animate-float {
+      animation: floatBob 2.5s ease-in-out infinite;
+    }
+    .zero-cancel-anim {
+      animation: cancelPair 0.7s forwards ease-in-out;
+    }
+    .avatar-transition {
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-800">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+      <!-- Title & Branding -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center font-display text-xl sm:text-2xl shadow-comic shadow-indigo-200">
+          ±
+        </div>
+        <div>
+          <h1 class="text-base sm:text-xl font-bold font-display tracking-tight text-slate-900 leading-tight">
+            Petualangan Bilangan Bulat
+          </h1>
+          <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Laboratorium Visual & Interaktif Matematika</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="fullscreenBtn" onclick="toggleFullScreen()" class="px-2.5 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 shadow-sm" title="Layar Penuh (Full Screen)">
+          <span id="fullscreenIcon" class="text-sm">⛶</span>
+          <span class="hidden md:inline" id="fullscreenLabel">Layar Penuh</span>
+        </button>
+        <button id="soundToggleBtn" onclick="toggleAudio()" class="px-2.5 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 shadow-sm" title="Aktif/Nonaktifkan Suara">
+          <span id="soundIcon" class="text-sm">🔊</span>
+          <span class="hidden md:inline" id="soundLabel">Suara Nyala</span>
+        </button>
+        <button onclick="showInfoModal()" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1 transition active:scale-95 border border-indigo-200 shadow-sm" title="Petunjuk & Konsep Dasar">
+          <span>💡</span>
+          <span class="hidden sm:inline">Konsep Dasar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5 md:p-6 flex flex-col gap-4">
+
+    <!-- View Mode Tabs -->
+    <div class="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 max-w-xl mx-auto w-full shadow-inner">
+      <button onclick="switchTab('numberline')" id="tabBtn-numberline" class="tab-btn flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-semibold text-xs sm:text-sm text-center transition flex items-center justify-center gap-1.5 bg-white text-indigo-700 shadow-sm">
+        <span>📏</span>
+        <span>Garis Bilangan</span>
+      </button>
+      <button onclick="switchTab('counters')" id="tabBtn-counters" class="tab-btn flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-semibold text-xs sm:text-sm text-center transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+        <span>⚪</span>
+        <span>Keping Muatan</span>
+      </button>
+      <button onclick="switchTab('quiz')" id="tabBtn-quiz" class="tab-btn flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-semibold text-xs sm:text-sm text-center transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+        <span>⭐</span>
+        <span>Kuis Latihan</span>
+      </button>
+    </div>
+
+    <!-- UNIFIED SHARED PROBLEM & INPUT CONTROLS (Syncs Number Line & Counters) -->
+    <section id="shared-problem-card" class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-comic shadow-slate-200">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-center">
+        
+        <!-- Interactive Formula Display (Shared for both models) -->
+        <div class="md:col-span-6 flex flex-col items-center justify-center p-4 bg-gradient-to-b from-indigo-50/50 to-slate-50 rounded-2xl border border-indigo-100">
+          <div class="flex items-center justify-between w-full mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Soal Yang Sedang Diuji</span>
+            <button onclick="randomizeProblem()" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-100/70 hover:bg-indigo-200 text-indigo-800 font-semibold transition active:scale-95 flex items-center gap-1">
+              <span>🎲</span> Acak Soal
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 sm:gap-3 text-2xl sm:text-4xl font-display font-bold text-slate-800 my-1">
+            <span id="numA-display" class="px-3 py-1 bg-white rounded-xl shadow-sm border border-slate-200 transition text-pos-dark">+3</span>
+            <span id="op-display" class="text-indigo-600">+</span>
+            <span id="numB-display" class="px-3 py-1 bg-white rounded-xl shadow-sm border border-slate-200 transition text-slate-700">(-5)</span>
+            <span class="text-slate-400">=</span>
+            <span id="res-display" class="px-3.5 py-1 bg-indigo-600 text-white rounded-xl shadow-comic shadow-indigo-300">-2</span>
+          </div>
+
+          <!-- Pedagogical Rule Badge -->
+          <div id="rule-badge" class="mt-2 text-xs px-3 py-1.5 rounded-full bg-indigo-100/70 text-indigo-900 font-medium text-center">
+            Operasi: Ditambah bilangan negatif ➔ Sama dengan mundur ke KIRI
+          </div>
+        </div>
+
+        <!-- Input Sliders and Operator Selector -->
+        <div class="md:col-span-6 flex flex-col gap-3">
+          <!-- Bilangan A -->
+          <div class="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-200">
+            <div class="flex items-center justify-between text-xs font-semibold mb-1">
+              <span class="text-slate-600 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Bilangan Pertama (A)
+              </span>
+              <span id="valA-badge" class="font-bold px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800">+3</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="adjustValue('A', -1)" class="w-8 h-8 rounded-xl bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition flex items-center justify-center shadow-comic-pressed">−</button>
+              <input type="range" id="inputA" min="-10" max="10" value="3" oninput="onInputChanged()" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+              <button onclick="adjustValue('A', 1)" class="w-8 h-8 rounded-xl bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition flex items-center justify-center shadow-comic-pressed">+</button>
+            </div>
+          </div>
+
+          <!-- Operator Switch -->
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs font-semibold text-slate-500">Operasi Hitung:</span>
+            <div class="grid grid-cols-2 gap-2 flex-1 max-w-[240px]">
+              <button id="btnOpPlus" onclick="setOperator('+')" class="py-1.5 px-3 rounded-xl font-display font-bold text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-comic shadow-indigo-200 transition active:scale-95 flex items-center justify-center gap-1.5">
+                <span>+</span> Penjumlahan
+              </button>
+              <button id="btnOpMinus" onclick="setOperator('-')" class="py-1.5 px-3 rounded-xl font-display font-bold text-sm border-2 border-slate-200 bg-white text-slate-700 hover:border-slate-300 transition active:scale-95 flex items-center justify-center gap-1.5">
+                <span>−</span> Pengurangan
+              </button>
+            </div>
+          </div>
+
+          <!-- Bilangan B -->
+          <div class="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-200">
+            <div class="flex items-center justify-between text-xs font-semibold mb-1">
+              <span class="text-slate-600 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span> Bilangan Kedua (B)
+              </span>
+              <span id="valB-badge" class="font-bold px-2 py-0.5 rounded-lg bg-rose-100 text-rose-800">-5</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="adjustValue('B', -1)" class="w-8 h-8 rounded-xl bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition flex items-center justify-center shadow-comic-pressed">−</button>
+              <input type="range" id="inputB" min="-10" max="10" value="-5" oninput="onInputChanged()" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-violet-600">
+              <button onclick="adjustValue('B', 1)" class="w-8 h-8 rounded-xl bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition flex items-center justify-center shadow-comic-pressed">+</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: GARIS BILANGAN (NUMBER LINE SIMULATOR) -->
+    <section id="tab-numberline" class="tab-content flex flex-col gap-4">
+      
+      <!-- Visual Arena: Interactive Number Line Canvas/SVG -->
+      <div class="bg-white rounded-3xl p-3 sm:p-5 border border-slate-200 shadow-comic shadow-slate-200 relative overflow-hidden">
+        
+        <!-- Controls Bar Above Canvas -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <span>🚀</span> Visualisasi Lompatan Garis Bilangan
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="runSimulationAnimation()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-comic shadow-emerald-200 hover:brightness-105 active:scale-95 transition">
+              <span id="playIcon">▶</span> <span id="playBtnText">Mulai Langkah</span>
+            </button>
+            <button onclick="resetSimulation()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs sm:text-sm active:scale-95 transition">
+              ↺ Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Container for Number Line to protect small screen widths -->
+        <div class="w-full overflow-x-auto pb-2 focus:outline-none">
+          <div class="min-w-[680px] sm:min-w-[760px] md:min-w-full relative h-[250px] sm:h-[270px] select-none">
+            <!-- Dynamic SVG Number Line -->
+            <svg id="numberLineSvg" class="w-full h-full" viewBox="0 0 840 270" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <!-- Arrow Marker Positive -->
+                <marker id="arrow-pos" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 1 L 7 4 L 0 7 z" fill="#059669" />
+                </marker>
+                <!-- Arrow Marker Negative -->
+                <marker id="arrow-neg" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 7 1 L 0 4 L 7 7 z" fill="#e11d48" />
+                </marker>
+                <!-- Arrow Marker Neutral -->
+                <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 1 L 7 4 L 0 7 z" fill="#3b82f6" />
+                </marker>
+                <marker id="arrow-violet" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                  <path d="M 0 1 L 7 4 L 0 7 z" fill="#8b5cf6" />
+                </marker>
+                <!-- Gradients -->
+                <linearGradient id="arcGradA" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.9"/>
+                </linearGradient>
+                <linearGradient id="arcGradB" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="#ec4899" stop-opacity="0.9"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Base Axis Line -->
+              <line x1="20" y1="180" x2="820" y2="180" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+              <!-- Axis Arrows -->
+              <polygon points="12,180 24,174 24,186" fill="#94a3b8"/>
+              <polygon points="828,180 816,174 816,186" fill="#94a3b8"/>
+
+              <!-- Ticks & Grid rendered dynamically by JS -->
+              <g id="svgTicksGroup"></g>
+
+              <!-- Jump Arc Path for Step A (0 to A) -->
+              <path id="pathJumpA" d="" fill="none" stroke="#3b82f6" stroke-width="3.5" stroke-dasharray="6,4" stroke-linecap="round" opacity="0"/>
+              <!-- Jump Arc Path for Step B (A to A+B) -->
+              <path id="pathJumpB" d="" fill="none" stroke="#ec4899" stroke-width="4" stroke-linecap="round" opacity="0"/>
+
+              <!-- Target Marker Flag -->
+              <g id="targetFlag" opacity="0" class="transition-all duration-300">
+                <line id="flagPole" x1="0" y1="180" x2="0" y2="135" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="3,3"/>
+                <polygon id="flagCloth" points="0,135 22,145 0,155" fill="#ef4444"/>
+                <circle id="flagBase" cx="0" cy="180" r="5" fill="#ef4444"/>
+              </g>
+
+              <!-- Animated Character Avatar: "Kiki si Kancil Penjelajah" -->
+              <g id="characterAvatar" class="avatar-transition cursor-grab active:cursor-grabbing" transform="translate(420, 145)">
+                <!-- Speech Bubble Container above head -->
+                <g id="avatarBubble" opacity="1" transform="translate(-50, -48)">
+                  <rect width="100" height="26" rx="8" fill="#1e293b" class="shadow-md"/>
+                  <polygon points="45,26 55,26 50,32" fill="#1e293b"/>
+                  <text id="avatarBubbleText" x="50" y="17" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">
+                    Mulai di 0
+                  </text>
+                </g>
+                <!-- Avatar Graphic -->
+                <g id="characterGraphics" transform="scale(1, 1)">
+                  <!-- Drop shadow -->
+                  <ellipse cx="0" cy="34" rx="16" ry="5" fill="#64748b" opacity="0.3"/>
+                  <!-- Body / Head -->
+                  <circle cx="0" cy="15" r="18" fill="#f59e0b" stroke="#b45309" stroke-width="2"/>
+                  <!-- Cute Frog/Kancil Ears -->
+                  <circle cx="-12" cy="0" r="7" fill="#fbbf24" stroke="#b45309" stroke-width="2"/>
+                  <circle cx="12" cy="0" r="7" fill="#fbbf24" stroke="#b45309" stroke-width="2"/>
+                  <!-- Big Eyes -->
+                  <circle cx="-6" cy="12" r="4.5" fill="#ffffff"/>
+                  <circle cx="6" cy="12" r="4.5" fill="#ffffff"/>
+                  <circle id="eyePupilL" cx="-5" cy="12" r="2.2" fill="#1e293b"/>
+                  <circle id="eyePupilR" cx="7" cy="12" r="2.2" fill="#1e293b"/>
+                  <!-- Cute smile -->
+                  <path d="M -5 21 Q 0 25 5 21" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- Cheeks blush -->
+                  <circle cx="-11" cy="18" r="2.5" fill="#f87171" opacity="0.6"/>
+                  <circle cx="11" cy="18" r="2.5" fill="#f87171" opacity="0.6"/>
+                </g>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Pedagogical Explanation -->
+        <div class="mt-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+            <span>📖</span> Penjelasan Logika Gerakan:
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+            <div id="stepCard1" class="p-2.5 rounded-xl bg-white border border-slate-200 transition">
+              <span class="font-bold text-blue-600 block mb-0.5">Langkah 1: Posisi Awal</span>
+              <p id="stepText1" class="text-slate-600">Berdiri di titik 0, lalu melangkah menuju bilangan <strong id="step1Val">3</strong>.</p>
+            </div>
+            <div id="stepCard2" class="p-2.5 rounded-xl bg-white border border-slate-200 transition">
+              <span class="font-bold text-violet-600 block mb-0.5">Langkah 2: Menentukan Arah</span>
+              <p id="stepText2" class="text-slate-600">Operasi penjumlahan dengan bilangan negatif artinya melangkah mundur ke KIRI.</p>
+            </div>
+            <div id="stepCard3" class="p-2.5 rounded-xl bg-white border border-slate-200 transition">
+              <span class="font-bold text-emerald-600 block mb-0.5">Langkah 3: Titik Akhir</span>
+              <p id="stepText3" class="text-slate-600">Kancil berhenti di angka <strong id="step3Val">-2</strong>. Jadi hasil akhirnya adalah <strong id="step3Res">-2</strong>.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 2: MODEL KEPING MUATAN (ZERO PAIRS COUNTER MODEL) -->
+    <section id="tab-counters" class="tab-content hidden flex flex-col gap-4">
+      
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-comic shadow-slate-200">
+        <!-- Introduction Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold font-display text-slate-900 flex items-center gap-2">
+              <span>⚪⚫</span> Model Keping Muatan (Pasangan Nol)
+            </h2>
+            <p class="text-xs text-slate-500">
+              Mewakili soal yang sama menggunakan keping positif (+) dan negatif (−) yang saling menetralkan menjadi <strong>0 (Nol)</strong>.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="neutralizeZeroPairs()" id="btnEliminate" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-comic shadow-amber-200 transition active:scale-95">
+              <span>⚡</span> Netralkan Pasangan Nol
+            </button>
+            <button onclick="renderCounters()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs sm:text-sm transition active:scale-95">
+              ↺ Tata Ulang Keping
+            </button>
+          </div>
+        </div>
+
+        <!-- Formula display for counters (Explicitly identical to Number Line) -->
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-semibold text-slate-500">Bentuk Operasi Keping:</span>
+            <span id="counterFormula" class="font-display font-bold text-base sm:text-lg text-slate-800">
+              (+3) + (-5) = -2
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="counterStatusBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800">
+              Keping Siap
+            </span>
+          </div>
+        </div>
+
+        <!-- Counters Visual Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <!-- Positive Area -->
+          <div class="p-4 rounded-2xl bg-emerald-50/70 border-2 border-dashed border-emerald-200 flex flex-col min-h-[170px]">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Keping Positif (+)
+              </span>
+              <span id="posCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-lg bg-emerald-200 text-emerald-900">0 keping</span>
+            </div>
+            <div id="positiveChipsContainer" class="flex flex-wrap gap-2.5 items-center justify-start flex-1 content-start">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Negative Area -->
+          <div class="p-4 rounded-2xl bg-rose-50/70 border-2 border-dashed border-rose-200 flex flex-col min-h-[170px]">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-rose-500"></span> Keping Negatif (−)
+              </span>
+              <span id="negCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-lg bg-rose-200 text-rose-900">0 keping</span>
+            </div>
+            <div id="negativeChipsContainer" class="flex flex-wrap gap-2.5 items-center justify-start flex-1 content-start">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Explanation for Counters -->
+        <div id="counterExplanationBox" class="mt-4 p-3.5 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-xs sm:text-sm text-slate-700">
+          <p id="counterExplanationText">
+            Tekan tombol <strong>"Netralkan Pasangan Nol"</strong> untuk melihat keping positif dan keping negatif saling menghilangkan!
+          </p>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 3: KUIS LATIHAN & TANTANGAN (INTERACTIVE PRACTICE QUIZ) -->
+    <section id="tab-quiz" class="tab-content hidden flex flex-col gap-4">
+      
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-comic shadow-slate-200 max-w-2xl mx-auto w-full">
+        
+        <!-- Quiz Header & Scoreboard -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Tantangan Mandiri</span>
+            <h2 class="text-lg sm:text-xl font-bold font-display text-slate-900">Uji Pemahaman Bilangan Bulat</h2>
+          </div>
+          <!-- Score Pill -->
+          <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-2xl">
+            <span class="text-base">🏆</span>
+            <div>
+              <div class="text-[10px] text-amber-800 font-semibold uppercase leading-tight">Skor Kamu</div>
+              <div id="quizScoreText" class="text-sm font-display font-bold text-amber-900">0 Poin (0/0)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="my-6 text-center">
+          <span class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600 inline-block mb-3">
+            Berapakah hasil dari operasi berikut?
+          </span>
+          <div id="quizEquation" class="text-3xl sm:text-5xl font-display font-extrabold text-slate-900 my-2 tracking-wide">
+            (-4) + (+7) = ?
+          </div>
+          <p id="quizHintText" class="text-xs text-slate-400 mt-1 italic">
+            Tips: Bayangkan posisi kancil atau keping muatan yang saling menetralkan.
+          </p>
+        </div>
+
+        <!-- Multiple Choice Options -->
+        <div id="quizOptionsGrid" class="grid grid-cols-2 gap-3 my-4">
+          <!-- Injected dynamically -->
+        </div>
+
+        <!-- Feedback & Explanation Banner -->
+        <div id="quizFeedback" class="hidden p-4 rounded-2xl text-xs sm:text-sm my-3 transition-all">
+          <div id="quizFeedbackTitle" class="font-bold font-display text-base mb-1">Hebat, Jawaban Benar! 🎉</div>
+          <div id="quizFeedbackDetail" class="text-slate-700 leading-relaxed">
+            Penjelasan: Mulai dari -4, melangkah maju 7 satuan ke kanan sehingga tiba di titik 3.
+          </div>
+        </div>
+
+        <!-- Action / Next Question Button -->
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button onclick="generateNewQuizQuestion()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs sm:text-sm active:scale-95 transition">
+            Lewati Soal
+          </button>
+          <button id="btnNextQuiz" onclick="generateNewQuizQuestion()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-comic shadow-indigo-200 active:scale-95 transition">
+            Soal Selanjutnya ➔
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- PEDAGOGICAL SUMMARY SECTION (ALWAYS ACCESSIBLE BELOW SIMULATION) -->
+    <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-4 sm:p-6 shadow-comic shadow-slate-300">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm sm:text-base font-bold font-display flex items-center gap-2">
+          <span>🧠</span> Trik Cepat Memahami Tanda Bilangan
+        </h3>
+        <span class="text-[11px] font-semibold bg-indigo-800/80 px-2.5 py-1 rounded-full text-indigo-200">Kamus Aturan</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div class="p-3 bg-white/10 rounded-2xl border border-white/10">
+          <span class="font-bold text-amber-300 block mb-1 text-sm">+ (+) Tambah Positif</span>
+          <p class="text-slate-300">Melangkah maju ke arah KANAN. Nilai menjadi semakin besar.</p>
+        </div>
+        <div class="p-3 bg-white/10 rounded-2xl border border-white/10">
+          <span class="font-bold text-sky-300 block mb-1 text-sm">+ (-) Tambah Negatif</span>
+          <p class="text-slate-300">Sama dengan <strong>dikurangi</strong>! Melangkah mundur ke KIRI.</p>
+        </div>
+        <div class="p-3 bg-white/10 rounded-2xl border border-white/10">
+          <span class="font-bold text-rose-300 block mb-1 text-sm">- (+) Kurang Positif</span>
+          <p class="text-slate-300">Melangkah ke arah KIRI. Nilai menjadi semakin kecil.</p>
+        </div>
+        <div class="p-3 bg-white/10 rounded-2xl border border-white/10">
+          <span class="font-bold text-emerald-300 block mb-1 text-sm">- (-) Kurang Negatif</span>
+          <p class="text-slate-300">Minus bertemu minus berubah jadi <strong>TAMBAH (+)</strong>! Melangkah ke KANAN.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: KONSEP DASAR (NO ALERT POLICY) -->
+  <div id="infoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white max-w-lg w-full rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <h3 class="text-lg font-bold font-display text-slate-900 flex items-center gap-2">
+          <span>📘</span> Panduan Belajar Bilangan Bulat
+        </h3>
+        <button onclick="closeInfoModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition">✕</button>
+      </div>
+
+      <div class="space-y-3.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+        <div class="p-3 rounded-2xl bg-indigo-50 border border-indigo-100">
+          <h4 class="font-bold text-indigo-900 mb-1">Apa itu Bilangan Bulat?</h4>
+          <p>Bilangan bulat terdiri dari bilangan positif (1, 2, 3, ...), bilangan nol (0), dan bilangan negatif (-1, -2, -3, ...).</p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 mb-1">1. Model Garis Bilangan (Metode Kancil Melompat):</h4>
+          <ul class="list-disc list-inside space-y-1 text-slate-600">
+            <li>Titik <strong>0</strong> adalah tempat permulaan.</li>
+            <li>Arah ke <strong>Kanan</strong> menyatakan bilangan positif (+).</li>
+            <li>Arah ke <strong>Kiri</strong> menyatakan bilangan negatif (-).</li>
+            <li>Jika ada tanda minus ganda seperti <code class="bg-slate-100 px-1.5 py-0.5 rounded text-rose-600 font-bold">a - (-b)</code>, itu sama artinya dengan berbalik arah lalu mundur, yang menghasilkan gerakan ke <strong class="text-emerald-700">KANAN (a + b)</strong>!</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 mb-1">2. Model Keping Muatan:</h4>
+          <p>Konsep muatan listrik sering digunakan. Keping hijau bernilai <strong class="text-emerald-600">+1</strong> dan keping merah bernilai <strong class="text-rose-600">-1</strong>. Jika disatukan, keduanya membentuk <strong>Pasangan Nol</strong> yang saling menghilangkan.</p>
+        </div>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+        <button onclick="closeInfoModal()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-comic shadow-indigo-200 transition">
+          Mengerti! Siap Belajar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =====================================================================
+       GLOBAL SIMULATION STATE
+       ===================================================================== */
+    const state = {
+      valA: 3,
+      operator: '+',
+      valB: -5,
+      isAudioMuted: false,
+      audioInitialized: false,
+      isAnimating: false,
+      animTimeout: null,
+      quiz: {
+        score: 0,
+        total: 0,
+        currentAnswer: 0,
+        answered: false
+      }
+    };
+
+    // Audio synthesizer helper with Tone.js
+    let synth = null;
+    let duoSynth = null;
+
+    function initAudio() {
+      if (!state.audioInitialized) {
+        try {
+          Tone.start();
+          synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.01, decay: 0.15, sustain: 0.05, release: 0.2 }
+          }).toDestination();
+          synth.volume.value = -8;
+
+          duoSynth = new Tone.MembraneSynth().toDestination();
+          duoSynth.volume.value = -6;
+
+          state.audioInitialized = true;
+        } catch (e) {
+          console.warn("Audio initialization postponed until user gesture.");
+        }
+      }
+    }
+
+    function playNote(frequency, duration = "8n") {
+      if (state.isAudioMuted) return;
+      initAudio();
+      try {
+        if (synth) synth.triggerAttackRelease(frequency, duration);
+      } catch (err) {}
+    }
+
+    function playSuccessChime() {
+      if (state.isAudioMuted) return;
+      initAudio();
+      try {
+        const now = Tone.now();
+        synth.triggerAttackRelease("C5", "16n", now);
+        synth.triggerAttackRelease("E5", "16n", now + 0.1);
+        synth.triggerAttackRelease("G5", "16n", now + 0.2);
+        synth.triggerAttackRelease("C6", "8n", now + 0.3);
+      } catch(e) {}
+    }
+
+    function playPopSound() {
+      if (state.isAudioMuted) return;
+      initAudio();
+      try {
+        if (duoSynth) duoSynth.triggerAttackRelease("G2", "16n");
+      } catch (e) {}
+    }
+
+    function toggleAudio() {
+      state.isAudioMuted = !state.isAudioMuted;
+      const soundIcon = document.getElementById('soundIcon');
+      const soundLabel = document.getElementById('soundLabel');
+      if (state.isAudioMuted) {
+        soundIcon.textContent = "🔇";
+        soundLabel.textContent = "Suara Bisu";
+      } else {
+        soundIcon.textContent = "🔊";
+        soundLabel.textContent = "Suara Nyala";
+        playNote("C5", "8n");
+      }
+    }
+
+    /* =====================================================================
+       FULLSCREEN API SUPPORT
+       ===================================================================== */
+    function toggleFullScreen() {
+      const elem = document.documentElement;
+      const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+
+      if (!isFullscreen) {
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen().catch(err => {
+            console.warn("Fullscreen request error:", err);
+          });
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen();
+        } else if (elem.mozRequestFullScreen) {
+          elem.mozRequestFullScreen();
+        } else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(err => {
+            console.warn("Exit fullscreen error:", err);
+          });
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+      }
+    }
+
+    function updateFullscreenUI() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+      const icon = document.getElementById('fullscreenIcon');
+      const label = document.getElementById('fullscreenLabel');
+      if (icon && label) {
+        if (isFs) {
+          icon.textContent = "🗗";
+          label.textContent = "Keluar Layar Penuh";
+        } else {
+          icon.textContent = "⛶";
+          label.textContent = "Layar Penuh";
+        }
+      }
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenUI);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+    document.addEventListener('mozfullscreenchange', updateFullscreenUI);
+    document.addEventListener('MSFullscreenChange', updateFullscreenUI);
+
+    /* =====================================================================
+       TAB SWITCHING
+       ===================================================================== */
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+      if (activeTab) activeTab.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+        activeBtn.classList.remove('text-slate-600');
+      }
+
+      // Show shared problem card for Number Line and Counters, hide on Quiz
+      const sharedCard = document.getElementById('shared-problem-card');
+      if (sharedCard) {
+        if (tabId === 'quiz') {
+          sharedCard.classList.add('hidden');
+        } else {
+          sharedCard.classList.remove('hidden');
+        }
+      }
+
+      playNote("E5", "16n");
+
+      if (tabId === 'counters') {
+        renderCounters();
+      } else if (tabId === 'quiz' && state.quiz.total === 0) {
+        generateNewQuizQuestion();
+      }
+    }
+
+    // Coordinate Math: SVG ViewBox is 840px wide. Center (0) is at x = 420.
+    // Range: -10 to +10 (20 units total + padding).
+    // Step size between units = (780 - 60) / 20 = 36px per unit.
+    const SVG_CONFIG = {
+      centerX: 420,
+      baselineY: 180,
+      stepSizeX: 36,
+      minUnit: -10,
+      maxUnit: 10
+    };
+
+    function unitToX(unit) {
+      return SVG_CONFIG.centerX + (unit * SVG_CONFIG.stepSizeX);
+    }
+
+    function renderNumberLineTicks() {
+      const g = document.getElementById('svgTicksGroup');
+      if (!g) return;
+      g.innerHTML = '';
+
+      for (let i = SVG_CONFIG.minUnit; i <= SVG_CONFIG.maxUnit; i++) {
+        const x = unitToX(i);
+        const isZero = (i === 0);
+        const tickHeight = isZero ? 18 : 10;
+        const tickY1 = SVG_CONFIG.baselineY - tickHeight;
+        const tickY2 = SVG_CONFIG.baselineY + tickHeight;
+
+        // Tick line
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x);
+        line.setAttribute("y1", tickY1);
+        line.setAttribute("x2", x);
+        line.setAttribute("y2", tickY2);
+        line.setAttribute("stroke", isZero ? "#312e81" : "#94a3b8");
+        line.setAttribute("stroke-width", isZero ? "3" : "2");
+        g.appendChild(line);
+
+        // Tick label
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", SVG_CONFIG.baselineY + 30);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", isZero ? "14" : "12");
+        text.setAttribute("font-weight", isZero ? "bold" : "600");
+        text.setAttribute("fill", isZero ? "#1e1b4b" : (i > 0 ? "#059669" : "#e11d48"));
+        text.textContent = (i > 0 ? `+${i}` : `${i}`);
+        g.appendChild(text);
+
+        // Small vertical guide line for 0
+        if (isZero) {
+          const zeroGuide = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          zeroGuide.setAttribute("x1", x);
+          zeroGuide.setAttribute("y1", 60);
+          zeroGuide.setAttribute("x2", x);
+          zeroGuide.setAttribute("y2", SVG_CONFIG.baselineY - 20);
+          zeroGuide.setAttribute("stroke", "#cbd5e1");
+          zeroGuide.setAttribute("stroke-dasharray", "3,3");
+          g.appendChild(zeroGuide);
+        }
+      }
+    }
+
+    function adjustValue(variable, delta) {
+      if (state.isAnimating) return;
+      if (variable === 'A') {
+        const input = document.getElementById('inputA');
+        let newVal = parseInt(input.value) + delta;
+        newVal = Math.max(-10, Math.min(10, newVal));
+        input.value = newVal;
+      } else if (variable === 'B') {
+        const input = document.getElementById('inputB');
+        let newVal = parseInt(input.value) + delta;
+        newVal = Math.max(-10, Math.min(10, newVal));
+        input.value = newVal;
+      }
+      playNote("C4", "32n");
+      onInputChanged();
+    }
+
+    function setOperator(op) {
+      if (state.isAnimating) return;
+      state.operator = op;
+      const btnPlus = document.getElementById('btnOpPlus');
+      const btnMinus = document.getElementById('btnOpMinus');
+
+      if (op === '+') {
+        btnPlus.className = "py-1.5 px-3 rounded-xl font-display font-bold text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-comic shadow-indigo-200 transition active:scale-95 flex items-center justify-center gap-1.5";
+        btnMinus.className = "py-1.5 px-3 rounded-xl font-display font-bold text-sm border-2 border-slate-200 bg-white text-slate-700 hover:border-slate-300 transition active:scale-95 flex items-center justify-center gap-1.5";
+      } else {
+        btnMinus.className = "py-1.5 px-3 rounded-xl font-display font-bold text-sm border-2 border-indigo-600 bg-indigo-600 text-white shadow-comic shadow-indigo-200 transition active:scale-95 flex items-center justify-center gap-1.5";
+        btnPlus.className = "py-1.5 px-3 rounded-xl font-display font-bold text-sm border-2 border-slate-200 bg-white text-slate-700 hover:border-slate-300 transition active:scale-95 flex items-center justify-center gap-1.5";
+      }
+      playNote("D4", "32n");
+      onInputChanged();
+    }
+
+    function randomizeProblem() {
+      if (state.isAnimating) return;
+      const randA = Math.floor(Math.random() * 19) - 9; // -9 to +9
+      const randB = Math.floor(Math.random() * 19) - 9; // -9 to +9
+      const randOp = Math.random() > 0.5 ? '+' : '-';
+
+      document.getElementById('inputA').value = randA;
+      document.getElementById('inputB').value = randB;
+      setOperator(randOp);
+      playPopSound();
+    }
+
+    function calculateResult(a, op, b) {
+      if (op === '+') return a + b;
+      return a - b;
+    }
+
+    function onInputChanged() {
+      state.valA = parseInt(document.getElementById('inputA').value);
+      state.valB = parseInt(document.getElementById('inputB').value);
+
+      const result = calculateResult(state.valA, state.operator, state.valB);
+
+      // Update Badges on Inputs
+      const valABadge = document.getElementById('valA-badge');
+      valABadge.textContent = state.valA > 0 ? `+${state.valA}` : state.valA;
+      valABadge.className = `font-bold px-2 py-0.5 rounded-lg ${state.valA >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`;
+
+      const valBBadge = document.getElementById('valB-badge');
+      valBBadge.textContent = state.valB > 0 ? `+${state.valB}` : state.valB;
+      valBBadge.className = `font-bold px-2 py-0.5 rounded-lg ${state.valB >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`;
+
+      // Update Shared Equation Display
+      const numADisp = document.getElementById('numA-display');
+      numADisp.textContent = state.valA > 0 ? `+${state.valA}` : `${state.valA}`;
+      numADisp.className = `px-3 py-1 bg-white rounded-xl shadow-sm border border-slate-200 transition ${state.valA >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}`;
+
+      document.getElementById('op-display').textContent = state.operator;
+
+      const numBDisp = document.getElementById('numB-display');
+      numBDisp.textContent = `(${state.valB >= 0 ? '+' + state.valB : state.valB})`;
+      numBDisp.className = `px-3 py-1 bg-white rounded-xl shadow-sm border border-slate-200 transition ${state.valB >= 0 ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}`;
+
+      const resDisp = document.getElementById('res-display');
+      resDisp.textContent = result > 0 ? `+${result}` : result;
+      resDisp.className = `px-3.5 py-1 text-white rounded-xl shadow-comic transition ${result >= 0 ? 'bg-emerald-600 shadow-emerald-200' : 'bg-rose-600 shadow-rose-200'}`;
+
+      // Update Rule Explanation Badge & Steps
+      updateRuleBadgeAndSteps(state.valA, state.operator, state.valB, result);
+
+      // Keep counter model and number line avatar in perfect synchronization
+      renderCounters();
+      resetAvatarToStart();
+    }
+
+    function updateRuleBadgeAndSteps(a, op, b, result) {
+      const badge = document.getElementById('rule-badge');
+      const step1Val = document.getElementById('step1Val');
+      const stepText1 = document.getElementById('stepText1');
+      const stepText2 = document.getElementById('stepText2');
+      const step3Val = document.getElementById('step3Val');
+      const step3Res = document.getElementById('step3Res');
+
+      step1Val.textContent = a > 0 ? `+${a}` : a;
+      stepText1.innerHTML = `Mulai di titik <strong>0</strong>, lalu melangkah ke <strong>${a}</strong> (${a >= 0 ? 'ke Kanan' : 'ke Kiri'}).`;
+
+      let directionExplanation = "";
+      let ruleBadgeText = "";
+
+      if (op === '+') {
+        if (b >= 0) {
+          ruleBadgeText = "Operasi: Penjumlahan dengan positif ➔ Melangkah ke KANAN";
+          directionExplanation = `Dari posisi ${a}, ditambah bilangan positif (+${b}) artinya <strong>melangkah maju ke KANAN sejauh ${b} langkah</strong>.`;
+        } else {
+          ruleBadgeText = "Operasi: Ditambah bilangan negatif ➔ Sama dengan mundur ke KIRI";
+          directionExplanation = `Dari posisi ${a}, ditambah bilangan negatif (${b}) artinya <strong>melangkah ke KIRI sejauh ${Math.abs(b)} langkah</strong>.`;
+        }
+      } else { // '-'
+        if (b >= 0) {
+          ruleBadgeText = "Operasi: Pengurangan positif ➔ Melangkah mundur ke KIRI";
+          directionExplanation = `Dari posisi ${a}, dikurang bilangan positif (+${b}) artinya <strong>melangkah mundur ke KIRI sejauh ${b} langkah</strong>.`;
+        } else {
+          ruleBadgeText = "Operasi: Dikurang bilangan negatif ➔ MINUS & MINUS menjadi PLUS (+)";
+          directionExplanation = `Dari posisi ${a}, dikurang bilangan negatif (${b}) berarti berbalik arah lalu melangkah mundur, yang hasilnya <strong>bergerak ke KANAN sejauh ${Math.abs(b)} langkah</strong>!`;
+        }
+      }
+
+      badge.textContent = ruleBadgeText;
+      stepText2.innerHTML = directionExplanation;
+
+      step3Val.textContent = result > 0 ? `+${result}` : result;
+      step3Res.textContent = `${a > 0 ? '+' + a : a} ${op} (${b >= 0 ? '+' + b : b}) = ${result > 0 ? '+' + result : result}`;
+
+      // Update counters formula string to be 100% identical
+      const counterFormula = document.getElementById('counterFormula');
+      if (counterFormula) {
+        counterFormula.textContent = `(${a >= 0 ? '+' + a : a}) ${op} (${b >= 0 ? '+' + b : b}) = ${result >= 0 ? '+' + result : result}`;
+      }
+    }
+
+    function setAvatarPosition(unit, bubbleText, facingDirection = 1) {
+      const avatar = document.getElementById('characterAvatar');
+      const bubble = document.getElementById('avatarBubbleText');
+      const charGraphics = document.getElementById('characterGraphics');
+
+      const targetX = unitToX(unit);
+      const targetY = SVG_CONFIG.baselineY - 35;
+
+      avatar.setAttribute('transform', `translate(${targetX}, ${targetY})`);
+      bubble.textContent = bubbleText;
+
+      // Facing flip (1 = right, -1 = left)
+      if (facingDirection === -1) {
+        charGraphics.setAttribute('transform', 'scale(-1, 1)');
+      } else {
+        charGraphics.setAttribute('transform', 'scale(1, 1)');
+      }
+    }
+
+    function createArcD(startX, endX, heightPeak = 55) {
+      const midX = (startX + endX) / 2;
+      const baseline = SVG_CONFIG.baselineY;
+      const controlY = baseline - heightPeak - Math.abs(endX - startX) * 0.15;
+      return `M ${startX} ${baseline} Q ${midX} ${controlY} ${endX} ${baseline}`;
+    }
+
+    function resetAvatarToStart() {
+      clearTimeout(state.animTimeout);
+      state.isAnimating = false;
+
+      // Reset play button state
+      document.getElementById('playIcon').textContent = "▶";
+      document.getElementById('playBtnText').textContent = "Mulai Langkah";
+
+      // Hide paths & flags
+      const pathA = document.getElementById('pathJumpA');
+      const pathB = document.getElementById('pathJumpB');
+      const flag = document.getElementById('targetFlag');
+
+      pathA.setAttribute('opacity', '0');
+      pathB.setAttribute('opacity', '0');
+      flag.setAttribute('opacity', '0');
+
+      // Place character at 0
+      setAvatarPosition(0, "Titik 0", 1);
+    }
+
+    function resetSimulation() {
+      resetAvatarToStart();
+      playNote("C4", "16n");
+    }
+
+    function runSimulationAnimation() {
+      if (state.isAnimating) {
+        resetAvatarToStart();
+        return;
+      }
+
+      state.isAnimating = true;
+      document.getElementById('playIcon').textContent = "⏸";
+      document.getElementById('playBtnText').textContent = "Ulangi";
+
+      const a = state.valA;
+      const b = state.valB;
+      const op = state.operator;
+      const result = calculateResult(a, op, b);
+
+      const pathA = document.getElementById('pathJumpA');
+      const pathB = document.getElementById('pathJumpB');
+      const flag = document.getElementById('targetFlag');
+
+      // Reset elements
+      pathA.setAttribute('opacity', '0');
+      pathB.setAttribute('opacity', '0');
+      flag.setAttribute('opacity', '0');
+
+      // STEP 1: Stand at 0
+      setAvatarPosition(0, "Mulai di 0", a >= 0 ? 1 : -1);
+      playPopSound();
+
+      // STEP 2: Jump to A (after 600ms)
+      state.animTimeout = setTimeout(() => {
+        const x0 = unitToX(0);
+        const xA = unitToX(a);
+
+        pathA.setAttribute('d', createArcD(x0, xA, 45));
+        pathA.setAttribute('stroke', a >= 0 ? "#059669" : "#e11d48");
+        pathA.setAttribute('opacity', '1');
+
+        setAvatarPosition(a, `Titik A (${a})`, a >= 0 ? 1 : -1);
+        playNote(a >= 0 ? "E4" : "D4", "8n");
+
+        // STEP 3: Jump to Result (after another 1300ms)
+        state.animTimeout = setTimeout(() => {
+          const xRes = unitToX(result);
+          const movingRight = (result >= a);
+
+          pathB.setAttribute('d', createArcD(xA, xRes, 65));
+          pathB.setAttribute('stroke', movingRight ? "#059669" : "#e11d48");
+          pathB.setAttribute('opacity', '1');
+
+          setAvatarPosition(result, `Tiba di ${result}`, movingRight ? 1 : -1);
+          playNote(result >= 0 ? "G4" : "C4", "8n");
+
+          // Plant finish flag
+          flag.setAttribute('transform', `translate(${xRes}, 0)`);
+          flag.setAttribute('opacity', '1');
+
+          // Play triumph chime
+          setTimeout(() => {
+            playSuccessChime();
+            state.isAnimating = false;
+            document.getElementById('playIcon').textContent = "↺";
+            document.getElementById('playBtnText').textContent = "Langkah Lagi";
+          }, 600);
+
+        }, 1300);
+
+      }, 600);
+    }
+
+    function renderCounters() {
+      const posContainer = document.getElementById('positiveChipsContainer');
+      const negContainer = document.getElementById('negativeChipsContainer');
+      const posBadge = document.getElementById('posCountBadge');
+      const negBadge = document.getElementById('negCountBadge');
+      const explanation = document.getElementById('counterExplanationText');
+      const statusBadge = document.getElementById('counterStatusBadge');
+      const counterFormula = document.getElementById('counterFormula');
+
+      if (!posContainer || !negContainer) return;
+
+      posContainer.innerHTML = '';
+      negContainer.innerHTML = '';
+
+      const a = state.valA;
+      const b = state.valB;
+      const op = state.operator;
+      const result = calculateResult(a, op, b);
+
+      if (counterFormula) {
+        counterFormula.textContent = `(${a >= 0 ? '+' + a : a}) ${op} (${b >= 0 ? '+' + b : b}) = ${result >= 0 ? '+' + result : result}`;
+      }
+
+      // Pedagogical mapping: A [op] B in charge chips
+      // Addition (A + B): Combine A chips and B chips directly.
+      // Subtraction (A - B): In integer arithmetic, subtracting B is equivalent to adding (-B): A + (-B).
+      let effectivePos = 0;
+      let effectiveNeg = 0;
+
+      // Contribution from A
+      if (a > 0) effectivePos += a;
+      else if (a < 0) effectiveNeg += Math.abs(a);
+
+      // Contribution from B
+      const effectiveB = (op === '+') ? b : -b;
+      if (effectiveB > 0) effectivePos += effectiveB;
+      else if (effectiveB < 0) effectiveNeg += Math.abs(effectiveB);
+
+      posBadge.textContent = `${effectivePos} keping`;
+      negBadge.textContent = `${effectiveNeg} keping`;
+      statusBadge.textContent = "Keping Siap";
+      statusBadge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800";
+
+      // Populate Positive Chips (+)
+      for (let i = 0; i < effectivePos; i++) {
+        const chip = document.createElement('div');
+        chip.className = "chip-pos w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-display font-bold text-lg sm:text-xl flex items-center justify-center shadow-comic shadow-emerald-200 transition-all cursor-pointer transform hover:scale-110 active:scale-95";
+        chip.textContent = "+";
+        chip.dataset.type = "pos";
+        chip.dataset.index = i;
+        posContainer.appendChild(chip);
+      }
+      if (effectivePos === 0) {
+        posContainer.innerHTML = '<span class="text-xs text-emerald-700/60 italic py-4">Tidak ada keping positif</span>';
+      }
+
+      // Populate Negative Chips (-)
+      for (let j = 0; j < effectiveNeg; j++) {
+        const chip = document.createElement('div');
+        chip.className = "chip-neg w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-500 text-white font-display font-bold text-lg sm:text-xl flex items-center justify-center shadow-comic shadow-rose-200 transition-all cursor-pointer transform hover:scale-110 active:scale-95";
+        chip.textContent = "−";
+        chip.dataset.type = "neg";
+        chip.dataset.index = j;
+        negContainer.appendChild(chip);
+      }
+      if (effectiveNeg === 0) {
+        negContainer.innerHTML = '<span class="text-xs text-rose-700/60 italic py-4">Tidak ada keping negatif</span>';
+      }
+
+      const pairs = Math.min(effectivePos, effectiveNeg);
+      const remaining = Math.abs(effectivePos - effectiveNeg);
+      const remainingSign = effectivePos >= effectiveNeg ? "Positif (+)" : "Negatif (−)";
+
+      let subNote = "";
+      if (op === '-') {
+        subNote = `<br><span class="text-indigo-600">Catatan Konsep: Mengurangi <strong>(${b >= 0 ? '+' + b : b})</strong> setara dengan menambahkan lawannya <strong>(${effectiveB >= 0 ? '+' + effectiveB : effectiveB})</strong>.</span>`;
+      }
+
+      if (pairs > 0) {
+        explanation.innerHTML = `Terdapat <strong>${effectivePos} keping positif</strong> dan <strong>${effectiveNeg} keping negatif</strong>.${subNote}<br>Terdapat <strong>${pairs} Pasangan Nol</strong> yang siap dinetralkan. Tekan tombol <strong>"Netralkan Pasangan Nol"</strong>!`;
+      } else {
+        explanation.innerHTML = `Semua keping memiliki muatan yang sama (${remainingSign}).${subNote}<br>Hasil akhirnya adalah <strong>${result >= 0 ? '+' + result : result}</strong>.`;
+      }
+    }
+
+    function neutralizeZeroPairs() {
+      const posChips = document.querySelectorAll('#positiveChipsContainer .chip-pos');
+      const negChips = document.querySelectorAll('#negativeChipsContainer .chip-neg');
+      const pairsCount = Math.min(posChips.length, negChips.length);
+
+      if (pairsCount === 0) {
+        playNote("C4", "16n");
+        return;
+      }
+
+      playPopSound();
+
+      // Animate cancellation pair by pair with a wave delay
+      for (let i = 0; i < pairsCount; i++) {
+        setTimeout(() => {
+          if (posChips[i]) {
+            posChips[i].classList.add('zero-cancel-anim');
+          }
+          if (negChips[i]) {
+            negChips[i].classList.add('zero-cancel-anim');
+          }
+          playNote("E5", "32n");
+        }, i * 150);
+      }
+
+      // After all pairs cancelled, summarize result
+      setTimeout(() => {
+        const remainingPos = posChips.length - pairsCount;
+        const remainingNeg = negChips.length - pairsCount;
+        const finalVal = remainingPos > 0 ? remainingPos : (remainingNeg > 0 ? -remainingNeg : 0);
+
+        const statusBadge = document.getElementById('counterStatusBadge');
+        statusBadge.textContent = "Selesai Dinetralkan";
+        statusBadge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800";
+
+        const explanation = document.getElementById('counterExplanationText');
+        explanation.innerHTML = `✨ <strong>${pairsCount} Pasangan Nol berhasil dinetralkan (menjadi 0)!</strong><br>Sisa keping yang tidak berpasangan adalah <strong>${Math.abs(finalVal)} keping ${finalVal >= 0 ? 'Positif (+)' : 'Negatif (-)'}</strong>. Jadi hasilnya adalah <strong>${finalVal > 0 ? '+' + finalVal : finalVal}</strong>.`;
+
+        playSuccessChime();
+      }, pairsCount * 150 + 500);
+    }
+
+    function generateNewQuizQuestion() {
+      state.quiz.answered = false;
+      const feedback = document.getElementById('quizFeedback');
+      feedback.classList.add('hidden');
+
+      // Random integers from -10 to 10
+      const a = Math.floor(Math.random() * 19) - 9; // -9 to 9
+      const b = Math.floor(Math.random() * 19) - 9; // -9 to 9
+      const op = Math.random() > 0.5 ? '+' : '-';
+      const correctAns = calculateResult(a, op, b);
+      state.quiz.currentAnswer = correctAns;
+
+      // Update question text
+      const eqEl = document.getElementById('quizEquation');
+      const bStr = b < 0 ? `(${b})` : `(+${b})`;
+      const aStr = a < 0 ? `(${a})` : `${a}`;
+      eqEl.innerHTML = `${aStr} ${op} ${bStr} = <span class="text-indigo-600">?</span>`;
+
+      // Generate 4 unique choices (1 correct, 3 distractor traps)
+      const options = new Set();
+      options.add(correctAns);
+
+      // Common student traps: sign errors, inverted subtraction, zero error
+      options.add(correctAns + 2);
+      options.add(correctAns - 2);
+      options.add(-correctAns);
+      options.add(a + b);
+      options.add(a - b);
+
+      const optionsArray = Array.from(options).filter(n => !isNaN(n));
+      // Shuffle and pick 4
+      const shuffled = optionsArray.sort(() => 0.5 - Math.random()).slice(0, 4);
+      if (!shuffled.includes(correctAns)) {
+        shuffled[0] = correctAns;
+        shuffled.sort(() => 0.5 - Math.random());
+      }
+
+      // Render options
+      const grid = document.getElementById('quizOptionsGrid');
+      grid.innerHTML = '';
+
+      shuffled.forEach(val => {
+        const btn = document.createElement('button');
+        btn.className = "quiz-opt-btn py-3 px-4 rounded-2xl bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 text-slate-800 font-display font-bold text-lg sm:text-xl shadow-comic shadow-slate-100 transition active:scale-95 flex items-center justify-center";
+        btn.textContent = val > 0 ? `+${val}` : `${val}`;
+        btn.onclick = () => checkQuizAnswer(val, btn, a, op, b);
+        grid.appendChild(btn);
+      });
+    }
+
+    function checkQuizAnswer(chosenVal, buttonEl, a, op, b) {
+      if (state.quiz.answered) return;
+      state.quiz.answered = true;
+      state.quiz.total++;
+
+      const isCorrect = (chosenVal === state.quiz.currentAnswer);
+      const feedback = document.getElementById('quizFeedback');
+      const title = document.getElementById('quizFeedbackTitle');
+      const detail = document.getElementById('quizFeedbackDetail');
+      const scoreText = document.getElementById('quizScoreText');
+
+      if (isCorrect) {
+        state.quiz.score += 10;
+        buttonEl.className = "py-3 px-4 rounded-2xl bg-emerald-500 border-2 border-emerald-600 text-white font-display font-bold text-lg sm:text-xl shadow-comic shadow-emerald-200";
+        feedback.className = "p-4 rounded-2xl text-xs sm:text-sm my-3 bg-emerald-50 border border-emerald-200 text-emerald-900";
+        title.innerHTML = "Hore! Jawabanmu Benar! 🌟";
+        playSuccessChime();
+      } else {
+        buttonEl.className = "py-3 px-4 rounded-2xl bg-rose-500 border-2 border-rose-600 text-white font-display font-bold text-lg sm:text-xl shadow-comic shadow-rose-200";
+        feedback.className = "p-4 rounded-2xl text-xs sm:text-sm my-3 bg-rose-50 border border-rose-200 text-rose-900";
+        title.innerHTML = `Kurang Tepat, Jawabannya adalah ${state.quiz.currentAnswer > 0 ? '+' + state.quiz.currentAnswer : state.quiz.currentAnswer} 🤔`;
+        playNote("C3", "8n");
+      }
+
+      // Step by step breakdown for the answer
+      detail.innerHTML = `<strong>Pembahasan:</strong> Mulai di <strong>${a}</strong>. Operasi ${op === '+' ? 'penjumlahan' : 'pengurangan'} dengan <strong>${b}</strong> menghasilkan pergeseran ke arah ${state.quiz.currentAnswer >= a ? 'KANAN' : 'KIRI'} hingga mencapai titik <strong>${state.quiz.currentAnswer}</strong>.`;
+
+      feedback.classList.remove('hidden');
+      scoreText.textContent = `${state.quiz.score} Poin (${state.quiz.score / 10}/${state.quiz.total} Benar)`;
+    }
+
+    function showInfoModal() {
+      document.getElementById('infoModal').classList.remove('hidden');
+      playNote("G4", "16n");
+    }
+
+    function closeInfoModal() {
+      document.getElementById('infoModal').classList.add('hidden');
+    }
+
+    // Close modal on Escape
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeInfoModal();
+    });
+
+    // Window Load Initialization
+    window.onload = function () {
+      renderNumberLineTicks();
+      onInputChanged();
+    };
+  </script>
+</body>
+</html>
