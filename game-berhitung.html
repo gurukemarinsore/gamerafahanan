@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Berhitung Rafa &amp; Hanan v40</title>
+    <title>Game Berhitung Rafa &amp; Hanan v42</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/wTRhL4J.png">
     <style>
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900;1000&display=swap");
@@ -124,6 +124,27 @@ body[data-theme="dark"] .question-scribble-clear { background: rgba(31, 41, 55, 
 #question-text, .answer-display { display: flex; align-items: center; justify-content: center; gap: 0.2em; z-index: 1; pointer-events: none; user-select: none; }
 #question-text { grid-row: 2; width: 100%; height: var(--question-row-height); font-size: var(--game-font-size); font-weight: 1000; line-height: 1; letter-spacing: -0.04em; overflow: hidden; }
 .answer-display { grid-row: 3; width: 170px; height: var(--answer-row-height); border-bottom: 7px solid var(--secondary-color); margin-top: 0; color: var(--primary-color); font-size: var(--game-font-size); font-weight: 1000; line-height: 1; letter-spacing: -0.04em; padding: 0 8px 6px; overflow: hidden; }
+/* Outline jawaban mengikuti warna latar soal tanpa mengubah coretan. */
+#user-input .digit-group > span {
+    --answer-outline-size: clamp(2px, 0.05em, 4px);
+    --answer-outline-diagonal: calc(var(--answer-outline-size) * 0.7071);
+    text-shadow:
+        var(--answer-outline-size) 0 0 var(--soft-card),
+        calc(-1 * var(--answer-outline-size)) 0 0 var(--soft-card),
+        0 var(--answer-outline-size) 0 var(--soft-card),
+        0 calc(-1 * var(--answer-outline-size)) 0 var(--soft-card),
+        var(--answer-outline-diagonal) var(--answer-outline-diagonal) 0 var(--soft-card),
+        calc(-1 * var(--answer-outline-diagonal)) var(--answer-outline-diagonal) 0 var(--soft-card),
+        var(--answer-outline-diagonal) calc(-1 * var(--answer-outline-diagonal)) 0 var(--soft-card),
+        calc(-1 * var(--answer-outline-diagonal)) calc(-1 * var(--answer-outline-diagonal)) 0 var(--soft-card);
+}
+@supports (-webkit-text-stroke: 1px black) and (paint-order: stroke fill) {
+    #user-input .digit-group > span {
+        -webkit-text-stroke: calc(var(--answer-outline-size) * 2) var(--soft-card);
+        paint-order: stroke fill;
+        text-shadow: none;
+    }
+}
 .digit-group { display: inline-flex; align-items: center; justify-content: center; gap: 0.08em; }
 .digit-group.multi-digit { gap: 0.05em; }
 .math-operator { display: inline-flex; align-items: center; justify-content: center; min-width: 0.7em; margin: 0 0.02em; }
@@ -607,116 +628,109 @@ body[data-theme="dark"] .question-scribble-clear { background: rgba(31, 41, 55, 
     #app-container[data-screen="game-screen"] .numpad, #app-container[data-screen="game-screen"] .handwriting-panel, #app-container[data-screen="game-screen"] .voice-panel { flex-grow: 1.02; }
     #app-container[data-screen="game-screen"] .btn-del, #app-container[data-screen="game-screen"] .btn-ok { font-size: clamp(2.3rem, 5.4vw, 3rem); }
 }
-/* Rekap satu layar: ukuran mengikuti ruang browser, tanpa mengubah menu. */
-#app-container[data-screen="result-screen"] { height: min(94dvh, 720px); min-height: 0; }
-#result-screen { justify-content: center; align-items: center; overflow: hidden; padding: 12px 28px 22px; gap: 0; text-align: center; }
-#result-screen h2 { font-size: 30px; line-height: 1.2; letter-spacing: -1px; margin: 0 0 5px; }
-#result-screen .result-heading { flex: 0 0 auto; width: 100%; }
-#result-screen .result-end-note { color: var(--muted-color); font-size: 13px; line-height: 1.4; margin: 0 0 10px; }
-#result-screen .result-score-label { font-size: 16px; line-height: 1.3; }
-#result-screen .score-big { font-size: 76px; line-height: 1; margin: 3px 0 16px; }
-#result-screen .result-stats { width: 100%; max-width: 720px; margin: 0 auto; display: grid; gap: 10px; flex: 0 0 auto; font-size: inherit; line-height: normal; }
-#result-screen .result-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-#result-screen .result-setting { border: 1px solid var(--border-color); border-radius: 18px; background: var(--input-bg); padding: 12px 14px; display: grid; grid-template-rows: auto auto 1fr; gap: 5px; text-align: center; justify-items: center; min-width: 0; }
-#result-screen .result-label { color: var(--muted-color); font-size: 12px; font-weight: 900; line-height: 1.3; }
-#result-screen .result-setting-value, #result-screen .result-mode { font-size: 18px; font-weight: 900; line-height: 1.3; }
-#result-screen .result-description { color: var(--muted-color); font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
-#result-screen .result-mode { align-self: start; display: flex; align-items: center; justify-content: center; gap: 7px; }
+/* Rekap satu halaman: skor selalu di tengah, rincian dalam satu panel tabel. */
+#app-container[data-screen="result-screen"] { height: min(94dvh, 820px); min-height: 0; }
+#result-screen { container: result-summary / size; justify-content: center; align-items: center; overflow: hidden; padding: 12px 26px 16px; gap: 12px; text-align: center; }
+#result-screen .result-heading { flex: none; width: 100%; }
+#result-screen h2 { font-size: 30px; line-height: 1.15; letter-spacing: -1px; margin: 0 0 3px; }
+#result-screen .result-end-note { color: var(--muted-color); font-size: 13px; line-height: 1.3; margin: 0 0 5px; }
+#result-screen .result-score-label { font-size: 15px; line-height: 1.2; }
+#result-screen .score-big { font-size: clamp(90px, 21cqh, 120px); line-height: 1; margin: 3px 0 0; }
+#result-screen .result-stats { width: 100%; max-width: 840px; margin: 0; display: grid; gap: 0; flex: none; font-size: inherit; line-height: normal; border: 1px solid var(--border-color); border-radius: 22px; background: var(--input-bg); overflow: hidden; }
+#result-screen .result-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+#result-screen .result-setting { border: 0; border-radius: 0; background: transparent; padding: 10px 14px; display: grid; grid-template-rows: auto auto 1fr; gap: 4px; text-align: center; justify-items: center; align-items: center; min-width: 0; }
+#result-screen .result-setting + .result-setting { border-left: 1px solid var(--border-color); }
+#result-screen .result-label { color: var(--muted-color); font-size: 12px; font-weight: 900; line-height: 1.25; }
+#result-screen .result-setting-value, #result-screen .result-mode { font-size: 18px; font-weight: 900; line-height: 1.25; }
+#result-screen .result-description { color: var(--muted-color); font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; }
+#result-screen .result-mode { align-self: start; display: flex; align-items: center; justify-content: center; gap: 6px; }
 #result-screen .result-mode-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted-color); flex: none; }
 #result-screen .result-mode-dot.is-active { background: var(--success-color); }
-#result-screen .result-heart-list { display: flex; gap: 7px; justify-content: center; align-items: center; align-self: center; min-height: 27px; }
-#result-screen .result-heart { width: 27px; height: 27px; fill: #dc2626; stroke: #dc2626; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#result-screen .result-heart-list { display: flex; gap: 6px; justify-content: center; align-items: center; align-self: center; min-height: 25px; }
+#result-screen .result-heart { width: 25px; height: 25px; fill: #dc2626; stroke: #dc2626; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 #result-screen .result-heart.is-used { fill: none; stroke: var(--muted-color); }
 #result-screen .result-heart-list.is-off { color: var(--muted-color); font-size: 22px; font-weight: 800; line-height: 1; }
-#result-screen .result-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; margin: 0; }
-#result-screen .result-card { display: grid; gap: 6px; padding: 12px 6px; min-height: 0; place-items: center; border-radius: 18px; }
-#result-screen .result-value { font-size: 24px; font-weight: 1000; line-height: 1.15; }
-#result-screen .time-summary { width: 100%; min-height: 0; margin: 0; padding: 12px 6px; border-radius: 18px; }
+#result-screen .result-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; width: 100%; margin: 0; border-top: 1px solid var(--border-color); }
+#result-screen .result-card { display: grid; gap: 5px; padding: 10px 6px; min-width: 0; min-height: 0; place-items: center; border: 0; border-radius: 0; background: transparent; }
+#result-screen .result-card + .result-card { border-left: 1px solid var(--border-color); }
+#result-screen .result-value { font-size: 26px; font-weight: 1000; line-height: 1.1; }
+#result-screen .time-summary { width: 100%; min-height: 0; margin: 0; padding: 0; border: 0; border-top: 1px solid var(--border-color); border-radius: 0; background: transparent; }
 #result-screen .time-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-#result-screen .time-summary-item { min-height: 0; padding: 0 6px; gap: 6px; }
-#result-screen .time-summary-label { font-size: 12px; line-height: 1.3; white-space: normal; }
-#result-screen .time-summary-value { font-size: 21px; line-height: 1.2; font-variant-numeric: tabular-nums; }
-#result-screen .result-actions { flex: none; margin-top: 14px; display: flex; justify-content: center; width: 100%; }
-#result-screen .btn-restart { margin: 0; padding: 12px 34px; min-height: 46px; border-radius: 18px; font-size: 16px; }
-/* Bentuk, warna dan garis hati sama dengan rekap; animasi permainan tetap aktif. */
+#result-screen .time-summary-item { min-height: 0; padding: 10px 6px; gap: 5px; }
+#result-screen .time-summary-label { font-size: 12px; line-height: 1.25; white-space: normal; }
+#result-screen .time-summary-value { font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+#result-screen .result-actions { flex: none; margin: 0; display: flex; justify-content: center; width: 100%; }
+#result-screen .btn-restart { margin: 0; padding: 11px 34px; min-height: 46px; border-radius: 17px; font-size: 16px; }
+/* Bentuk hati permainan tetap sama dengan rekap. */
 .life-heart { fill: #dc2626; stroke: #dc2626; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; filter: none; }
 .heart-slot.lost .life-heart { fill: none; stroke: var(--muted-color); stroke-width: 1.8; }
 @media (max-height: 600px), (max-width: 840px) {
     #app-container[data-screen="result-screen"] { width: 100vw; height: 100dvh; min-height: 0; border-radius: 0; }
 }
 @media (max-width: 600px) {
-    #result-screen { padding: 10px 16px 18px; }
-    #result-screen h2 { font-size: 25px; }
-    #result-screen .result-end-note { font-size: 12px; margin-bottom: 8px; }
-    #result-screen .score-big { font-size: 66px; margin-bottom: 12px; }
-    #result-screen .result-setting { padding: 10px; border-radius: 16px; }
+    #result-screen { padding: 8px 12px 12px; gap: 10px; }
+    #result-screen .result-stats { border-radius: 18px; }
+    #result-screen h2 { font-size: 26px; }
+    #result-screen .score-big { font-size: clamp(72px, 18cqh, 108px); }
+    #result-screen .result-setting { padding: 10px 8px; }
     #result-screen .result-setting-value, #result-screen .result-mode { font-size: 16px; }
     #result-screen .result-description { font-size: 11px; }
-    #result-screen .result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    #result-screen .result-card { padding: 10px 6px; gap: 5px; border-radius: 16px; }
+    #result-screen .result-label, #result-screen .time-summary-label { font-size: 11px; }
     #result-screen .result-value { font-size: 23px; }
-    #result-screen .time-summary { padding: 10px 4px; border-radius: 16px; }
-    #result-screen .time-summary-item { padding: 0 4px; gap: 5px; }
-    #result-screen .time-summary-label { font-size: 11px; }
     #result-screen .time-summary-value { font-size: 19px; }
-    #result-screen .result-actions { margin-top: 12px; }
 }
-/* Portrait pendek: pertahankan dua kartu pengaturan, statistik 2x2, waktu 3 kolom. */
-@media (max-width: 600px) and (max-height: 720px) {
-    #result-screen { padding: 6px 12px 12px; }
-    #result-screen h2 { font-size: 22px; margin-bottom: 2px; }
-    #result-screen .result-end-note { font-size: 11px; margin-bottom: 4px; }
-    #result-screen .result-score-label { font-size: 13px; }
-    #result-screen .score-big { font-size: 44px; margin: 2px 0 8px; }
-    #result-screen .result-stats, #result-screen .result-settings { gap: 6px; }
-    #result-screen .result-setting { padding: 7px 6px; gap: 3px; border-radius: 13px; }
-    #result-screen .result-label { font-size: 11px; }
-    #result-screen .result-setting-value, #result-screen .result-mode { font-size: 14px; }
-    #result-screen .result-description { font-size: 10px; }
-    #result-screen .result-heart-list { min-height: 23px; gap: 5px; }
-    #result-screen .result-heart { width: 23px; height: 23px; }
-    #result-screen .result-grid { gap: 6px; }
-    #result-screen .result-card { padding: 6px; gap: 3px; border-radius: 13px; }
-    #result-screen .result-value { font-size: 20px; }
-    #result-screen .time-summary { padding: 7px 3px; border-radius: 13px; }
-    #result-screen .time-summary-item { padding: 0 3px; gap: 4px; }
-    #result-screen .time-summary-value { font-size: 18px; }
-    #result-screen .result-actions { margin-top: 8px; }
-    #result-screen .btn-restart { min-height: 42px; padding: 9px 28px; font-size: 14px; border-radius: 14px; }
-}
-/* Browser/HP melebar dan pendek: nilai di kiri, rincian di kanan. */
-@media (min-width: 601px) and (max-height: 720px), (orientation: landscape) and (min-width: 480px) and (max-height: 520px) {
-    #result-screen.active { display: grid; grid-template-columns: minmax(130px, .65fr) minmax(0, 1.9fr); grid-template-rows: auto auto; align-content: center; row-gap: 12px; column-gap: 16px; padding: 8px 18px 16px; align-items: center; }
-    #result-screen .result-heading { grid-column: 1; grid-row: 1; }
-    #result-screen h2 { font-size: 24px; max-width: 190px; margin: 0 auto 6px; }
-    #result-screen .result-end-note { font-size: 11px; margin-bottom: 8px; }
-    #result-screen .result-score-label { font-size: 13px; }
-    #result-screen .score-big { font-size: 66px; margin: 2px 0 8px; }
-    #result-screen .result-stats { grid-column: 2; grid-row: 1 / span 2; gap: 8px; }
-    #result-screen .result-actions { grid-column: 1; grid-row: 2; margin: 0; align-self: start; }
-    #result-screen .btn-restart { font-size: 13px; padding: 10px 22px; min-height: 40px; border-radius: 14px; }
-    #result-screen .result-settings, #result-screen .result-grid { gap: 8px; }
-    #result-screen .result-setting { padding: 9px 10px; border-radius: 14px; gap: 4px; }
+/* Ikuti ukuran area hasil setelah header, bukan sekadar orientasi perangkat. */
+@container result-summary (max-height: 520px) {
+    #result-screen h2 { font-size: 24px; line-height: 1.1; margin-bottom: 2px; }
+    #result-screen .result-end-note { font-size: 11px; line-height: 1.2; margin-bottom: 3px; }
+    #result-screen .result-score-label { font-size: 12px; }
+    #result-screen .score-big { font-size: clamp(64px, 18cqh, 96px); margin: 2px 0 0; }
+    #result-screen .result-setting { padding: 5px 8px; gap: 2px; }
+    #result-screen .result-label, #result-screen .time-summary-label { font-size: 10px; }
     #result-screen .result-setting-value, #result-screen .result-mode { font-size: 15px; }
     #result-screen .result-description { font-size: 10px; }
-    #result-screen .result-label { font-size: 11px; }
-    #result-screen .result-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    #result-screen .result-card { padding: 9px 4px; border-radius: 14px; gap: 5px; }
-    #result-screen .result-value { font-size: 20px; }
-    #result-screen .result-heart-list { min-height: 23px; }
-    #result-screen .result-heart { width: 23px; height: 23px; }
-    #result-screen .time-summary { padding: 9px 4px; border-radius: 14px; }
-    #result-screen .time-summary-item { gap: 5px; padding: 0 4px; }
+    #result-screen .result-heart-list { min-height: 21px; gap: 5px; }
+    #result-screen .result-heart { width: 21px; height: 21px; }
+    #result-screen .result-card, #result-screen .time-summary-item { padding: 5px 4px; gap: 3px; }
+    #result-screen .result-value { font-size: 21px; }
     #result-screen .time-summary-value { font-size: 18px; }
+    #result-screen .btn-restart { min-height: 38px; padding: 8px 28px; font-size: 14px; border-radius: 14px; }
 }
-@media (orientation: landscape) and (max-height: 360px) {
-    #result-screen.active { padding: 4px 12px 10px; column-gap: 12px; }
-    #result-screen h2 { font-size: 21px; }
-    #result-screen .score-big { font-size: 54px; }
-    #result-screen .result-stats, #result-screen .result-settings, #result-screen .result-grid { gap: 6px; }
-    #result-screen .result-setting { padding: 6px; gap: 3px; }
-    #result-screen .result-card { padding: 6px 3px; gap: 3px; }
-    #result-screen .time-summary { padding: 6px 3px; }
+@media (max-height: 520px) {
+    #result-screen { padding: 6px 12px 8px; gap: 6px; }
+}
+@container result-summary (max-height: 360px) {
+    #result-screen h2 { font-size: 20px; }
+    #result-screen .result-end-note { font-size: 10px; margin-bottom: 2px; }
+    #result-screen .result-score-label { font-size: 11px; }
+    #result-screen .score-big { font-size: clamp(44px, 17cqh, 60px); }
+    #result-screen .result-setting { padding: 3px 6px; }
+    #result-screen .result-setting-value, #result-screen .result-mode { font-size: 14px; }
+    #result-screen .result-heart-list { min-height: 19px; }
+    #result-screen .result-heart { width: 19px; height: 19px; }
+    #result-screen .result-card, #result-screen .time-summary-item { padding: 3px 4px; }
+    #result-screen .result-value { font-size: 19px; }
+    #result-screen .time-summary-value { font-size: 16px; }
+    #result-screen .btn-restart { min-height: 34px; padding: 6px 26px; font-size: 13px; }
+}
+/* HP landscape pendek: isi sel dibuat sebaris agar skor tetap di tengah atas. */
+@container result-summary (max-height: 300px) and (min-width: 440px) {
+    #result-screen h2 { font-size: 18px; margin-bottom: 1px; }
+    #result-screen .result-end-note { font-size: 10px; line-height: 1.1; margin-bottom: 1px; }
+    #result-screen .result-score-label { font-size: 10px; line-height: 1.1; }
+    #result-screen .score-big { font-size: clamp(32px, 16cqh, 48px); margin-top: 1px; }
+    #result-screen .result-setting { grid-template-columns: auto auto; grid-template-rows: auto auto; justify-content: center; column-gap: 6px; row-gap: 1px; padding: 3px 6px; }
+    #result-screen .result-setting-value, #result-screen .result-mode { font-size: 12px; }
+    #result-screen .result-description, #result-screen .result-heart-list { grid-column: 1 / -1; }
+    #result-screen .result-description { font-size: 9px; line-height: 1.2; }
+    #result-screen .result-heart-list { min-height: 17px; }
+    #result-screen .result-heart { width: 17px; height: 17px; }
+    #result-screen .result-card, #result-screen .time-summary-item { display: flex; justify-content: center; align-items: center; gap: 5px; padding: 3px 4px; }
+    #result-screen .result-label { font-size: 10px; }
+    #result-screen .result-value { font-size: 16px; }
+    #result-screen .time-summary-label { font-size: 9px; }
+    #result-screen .time-summary-value { font-size: 14px; }
+    #result-screen .btn-restart { min-height: 30px; padding: 4px 24px; font-size: 12px; }
 }
 
 /* Chevron digambar sebagai SVG agar bentuknya konsisten pada setiap font. */
