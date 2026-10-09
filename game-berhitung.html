@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Berhitung Rafa &amp; Hanan v39</title>
+    <title>Game Berhitung Rafa &amp; Hanan v40</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/wTRhL4J.png">
     <style>
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900;1000&display=swap");
@@ -893,8 +893,9 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
                             <option value="6">Level 6 (5-10 + 10-15)</option>
                             <option value="7">Level 7 (5-10 + 15-20)</option>
                             <option value="8">Level 8 (1-10 + 20-90)</option>
-                            <option value="9">Level 9 (2 Digit Bersusun tanpa menyimpan)</option>
-                            <option value="10">Level 10 (2 Digit Mendatar tanpa menyimpan)</option>
+                            <option value="9">Level 9 (2 digit bersusun tanpa menyimpan)</option>
+                            <option value="10">Level 10 (2 digit mendatar tanpa menyimpan)</option>
+                            <option value="11">Level 11 (2 digit bersusun dengan menyimpan)</option>
                         </select>
                         <button type="button" id="levelTrigger" class="level-trigger" role="combobox" aria-haspopup="listbox" aria-controls="levelList" aria-expanded="false" aria-labelledby="levelLabel levelTriggerText">
                             <span class="level-trigger-text" id="levelTriggerText">Level 1 (1-5 + 1-5)</span>
@@ -1058,7 +1059,8 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
         7: { add: [[5, 10], [15, 20]], subtract: [[15, 20], [5, 10]] },
         8: { add: [[1, 10], [20, 90]], subtract: [[20, 90], [1, 10]] },
         9: { add: [[10, 99], [10, 99]], subtract: [[10, 99], [10, 99]], vertical: true },
-        10: { add: [[10, 99], [10, 99]], subtract: [[10, 99], [10, 99]], vertical: false }
+        10: { add: [[10, 99], [10, 99]], subtract: [[10, 99], [10, 99]], vertical: false },
+        11: { add: [[10, 99], [10, 99]], subtract: [[10, 99], [10, 99]], vertical: true, regroup: true }
     };
     let currentQuestionIndex = 0;
     let correctAnswers = 0;
@@ -1275,6 +1277,14 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
         sync();
     }
 
+    function getTwoDigitLevelDescription(level, operation) {
+        const config = levelConfigs[level];
+        const layout = config.vertical ? 'bersusun' : 'mendatar';
+        const regrouping = config.regroup ? 'dengan' : 'tanpa';
+        const rule = operation === 'add' ? 'menyimpan' : operation === 'subtract' ? 'meminjam' : 'menyimpan/meminjam';
+        return `2 digit ${layout} ${regrouping} ${rule}`;
+    }
+
     function updateLevelOptions() {
         const selectedOperation = document.querySelector('input[name="operationMode"]:checked').value;
         const levelSelect = document.getElementById('levelSelect');
@@ -1283,14 +1293,8 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
             const config = levelConfigs[level];
             let ranges;
             let symbol;
-            if (level === '9' || level === '10') {
-                const layoutName = level === '9' ? 'Bersusun' : 'Mendatar';
-                const levelDescription = selectedOperation === 'add'
-                    ? `2 Digit ${layoutName} tanpa menyimpan`
-                    : selectedOperation === 'subtract'
-                        ? `2 Digit ${layoutName} tanpa meminjam`
-                        : `2 Digit ${layoutName} campuran`;
-                option.textContent = `Level ${level} (${levelDescription})`;
+            if (Number(level) >= 9) {
+                option.textContent = `Level ${level} (${getTwoDigitLevelDescription(Number(level), selectedOperation)})`;
                 return;
             }
             if (selectedOperation === 'add') {
@@ -2515,7 +2519,23 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
             if (typeof onComplete === 'function') onComplete();
         }, 540);
     }
-    function createTwoDigitNumbers(operationForQuestion) {
+    function createTwoDigitNumbers(operationForQuestion, regroup = false) {
+        if (regroup) {
+            if (operationForQuestion === 'add') {
+                // Satuan wajib menyimpan; jumlah puluhan + simpanan tetap satu digit.
+                const tens1 = getRandomInt(1, 7);
+                const tens2 = getRandomInt(1, 8 - tens1);
+                const units1 = getRandomInt(1, 9);
+                const units2 = getRandomInt(10 - units1, 9);
+                return { n1: tens1 * 10 + units1, n2: tens2 * 10 + units2 };
+            }
+            // Satuan wajib meminjam; puluhan pertama lebih besar agar hasil positif.
+            const tens1 = getRandomInt(2, 9);
+            const tens2 = getRandomInt(1, tens1 - 1);
+            const units1 = getRandomInt(0, 8);
+            const units2 = getRandomInt(units1 + 1, 9);
+            return { n1: tens1 * 10 + units1, n2: tens2 * 10 + units2 };
+        }
         if (operationForQuestion === 'add') {
             const tens1 = getRandomInt(1, 8);
             const tens2 = getRandomInt(1, 9 - tens1);
@@ -2549,8 +2569,8 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
             const ranges = currentOperation === 'mixed'
                 ? config.subtract
                 : (operationForQuestion === 'add' ? config.add : config.subtract);
-            if (currentLevel === 9 || currentLevel === 10) {
-                const twoDigitNumbers = createTwoDigitNumbers(operationForQuestion);
+            if (currentLevel >= 9) {
+                const twoDigitNumbers = createTwoDigitNumbers(operationForQuestion, !!config.regroup);
                 n1 = twoDigitNumbers.n1;
                 n2 = twoDigitNumbers.n2;
             } else {
@@ -2558,14 +2578,14 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
                 n2 = getRandomInt(ranges[1][0], ranges[1][1]);
             }
             operator = operationForQuestion === 'add' ? '+' : '-';
-            if (currentLevel !== 9 && currentLevel !== 10 && operationForQuestion === 'add' && currentOperation === 'add') {
+            if (currentLevel < 9 && operationForQuestion === 'add' && currentOperation === 'add') {
                 if (Math.random() > 0.5) {
                     let temp = n1;
                     n1 = n2;
                     n2 = temp;
                 }
             }
-            if (currentLevel !== 9 && currentLevel !== 10 && operationForQuestion === 'subtract' && n2 > n1) {
+            if (currentLevel < 9 && operationForQuestion === 'subtract' && n2 > n1) {
                 let temp = n1;
                 n1 = n2;
                 n2 = temp;
@@ -2591,7 +2611,7 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
         correctAnswerValue = questionData.answer;
         updateQuestionCounter();
         const questionArea = document.querySelector('.question-area');
-        const isVerticalLevel = currentLevel === 9;
+        const isVerticalLevel = !!levelConfigs[currentLevel].vertical;
         questionArea.classList.toggle('vertical-mode', isVerticalLevel);
         document.getElementById('question-text').innerHTML = renderQuestionDisplay(
             questionData.n1,
@@ -2713,10 +2733,8 @@ body[data-theme="dark"] { --level-hover-bg: #162841; --level-selected-bg: #20365
         const operationName = operation === 'add' ? 'Penjumlahan' : operation === 'subtract' ? 'Pengurangan' : 'Campuran';
         const config = levelConfigs[level];
         let description;
-        if (level === 9 || level === 10) {
-            const layout = level === 9 ? 'Bersusun' : 'Mendatar';
-            const rule = operation === 'add' ? 'tanpa menyimpan' : operation === 'subtract' ? 'tanpa meminjam' : 'campuran';
-            description = `Dua digit · ${layout} · ${rule}`;
+        if (level >= 9) {
+            description = getTwoDigitLevelDescription(level, operation);
         } else {
             const ranges = operation === 'add' ? config.add : config.subtract;
             const symbol = operation === 'add' ? '+' : operation === 'subtract' ? '−' : '±';
